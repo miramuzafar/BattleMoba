@@ -1,0 +1,13 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{67FB6CCB-437C-3FB5-0234-D39C81B86DAB}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "BattleMoba",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
