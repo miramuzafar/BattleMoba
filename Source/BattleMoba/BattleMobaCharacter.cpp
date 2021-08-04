@@ -91,9 +91,12 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 			if (row->keys == Currkeys)
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
-				if (this->IsLocallyControlled())
+				if (row->SkillMoveset != nullptr)
 				{
-					ServerExecuteAction(row->SkillMoveset, row->Damage, row->isOnCD);
+					if (this->IsLocallyControlled())
+					{
+						ServerExecuteAction(row->SkillMoveset, row->Damage, row->isOnCD);
+					}
 				}
 			}
 		}
@@ -109,7 +112,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(UAnimMontage* C
 {
 	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *ClientSkill->GetName()));
 
-	GetMesh()->GetAnimInstance()->Montage_Play(ClientSkill, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+	this->GetMesh()->GetAnimInstance()->Montage_Play(ClientSkill, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
 }
 
 bool ABattleMobaCharacter::ServerExecuteAction_Validate(UAnimMontage* ServerSkill, float ServerDamage, bool cooldown)
