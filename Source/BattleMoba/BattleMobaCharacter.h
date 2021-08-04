@@ -18,6 +18,7 @@ class ABattleMobaCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
 public:
 	ABattleMobaCharacter();
 
@@ -59,9 +60,27 @@ protected:
 	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
 
 protected:
+
+	//Assign data table from bp 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UDataTable* ActionTable;
+
+protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
+
+	//Get skills from input touch combo
+	UFUNCTION(BlueprintCallable)
+	void GetButtonSkillAction(FKey Currkeys);
+
+	//Skill sent to server
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable)
+	void ServerExecuteAction(UAnimMontage* ServerSkill, float ServerDamage, bool cooldown);
+
+	//Skill replicate on all client
+	UFUNCTION(Reliable, NetMulticast, WithValidation)
+	void MulticastExecuteAction(UAnimMontage* ClientSkill, float ClientDamage, bool cooldown);
 
 public:
 	/** Returns CameraBoom subobject **/

@@ -1,6 +1,7 @@
 // Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
 #include "BattleMobaCharacter.h"
+#include "Engine.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -11,6 +12,7 @@
 
 //////////////////////////////////////////////////////////////////////////
 // ABattleMobaCharacter
+#include "InputLibrary.h"
 
 ABattleMobaCharacter::ABattleMobaCharacter()
 {
@@ -74,6 +76,50 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ABattleMobaCharacter::OnResetVR);
+}
+
+void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
+{
+	//Used in error reporting
+	FString Context;
+	for (auto& name : ActionTable->GetRowNames())
+	{
+		FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
+
+		if (row)
+		{
+			if (row->keys == Currkeys)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
+				if (this->IsLocallyControlled())
+				{
+					ServerExecuteAction(row->SkillMoveset, row->Damage, row->isOnCD);
+				}
+			}
+		}
+	}
+}
+
+bool ABattleMobaCharacter::MulticastExecuteAction_Validate(UAnimMontage* ClientSkill, float ClientDamage, bool cooldown)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MulticastExecuteAction_Implementation(UAnimMontage* ClientSkill, float ClientDamage, bool cooldown)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *ClientSkill->GetName()));
+
+	GetMesh()->GetAnimInstance()->Montage_Play(ClientSkill, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+}
+
+bool ABattleMobaCharacter::ServerExecuteAction_Validate(UAnimMontage* ServerSkill, float ServerDamage, bool cooldown)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerExecuteAction_Implementation(UAnimMontage* ServerSkill, float ServerDamage, bool cooldown)
+{
+	MulticastExecuteAction(ServerSkill, ServerDamage, cooldown);
 }
 
 
