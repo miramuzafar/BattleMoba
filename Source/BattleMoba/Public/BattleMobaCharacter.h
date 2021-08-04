@@ -61,9 +61,18 @@ protected:
 
 protected:
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
+	FName TeamName;
+
 	//Assign data table from bp 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UDataTable* ActionTable;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
+	float Health;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
+	float Stamina;
 
 protected:
 	// APawn interface
@@ -71,15 +80,15 @@ protected:
 	// End of APawn interface
 
 	//Get skills from input touch combo
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
 	void GetButtonSkillAction(FKey Currkeys);
 
 	//Skill sent to server
-	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable)
+	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
 	void ServerExecuteAction(UAnimMontage* ServerSkill, float ServerDamage, bool cooldown);
 
 	//Skill replicate on all client
-	UFUNCTION(Reliable, NetMulticast, WithValidation)
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
 	void MulticastExecuteAction(UAnimMontage* ClientSkill, float ClientDamage, bool cooldown);
 
 public:
