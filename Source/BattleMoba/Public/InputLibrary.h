@@ -15,11 +15,18 @@ struct FActionSkill : public FTableRowBase
 	bool isOnCD = false;
 
 	//Get key
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Label")
+		bool IsUsingCD = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
+		float CDDuration = 0.0f;
+
+	//Get key
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		FKey keys;
 
 	//Anim to be played on key pressed
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SkillSwipe")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SkillAnim")
 		UAnimMontage* SkillMoveset;
 
 	//Damage to be dealt from the action
