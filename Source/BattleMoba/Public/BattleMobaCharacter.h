@@ -30,10 +30,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
+	
+
+
+
 protected:
 
 	/** Resets HMD orientation in VR. */
 	void OnResetVR();
+
+	/** Called for Fast Attack Input*/
+	void OnFastAttack();
 
 	/** Called for forwards/backward input */
 	void MoveForward(float Value);
@@ -74,10 +81,31 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
 	float Stamina;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
+	bool bAttacking = false;
+
+	UPROPERTY(VisibleANywhere, BlueprintReadWrite, Category = "Input")
+	int AttackCount = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
+	int32 AttackSectionUUID = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
+	FName AttackSection = "Attack1";
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
+	float AttackSectionLength = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ActionSkill")
+	UAnimMontage* FastAttack;
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
+
+	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
+	void ExecuteFastAttack();
 
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
@@ -90,6 +118,8 @@ protected:
 	//Skill replicate on all client
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
 	void MulticastExecuteAction(UAnimMontage* ClientSkill, float ClientDamage, bool cooldown);
+
+
 
 public:
 	/** Returns CameraBoom subobject **/

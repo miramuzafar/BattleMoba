@@ -58,6 +58,7 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	check(PlayerInputComponent);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	PlayerInputComponent->BindAction("FastAttack", IE_Pressed, this, &ABattleMobaCharacter::OnFastAttack);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ABattleMobaCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ABattleMobaCharacter::MoveRight);
@@ -76,6 +77,37 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ABattleMobaCharacter::OnResetVR);
+}
+
+void ABattleMobaCharacter::ExecuteFastAttack()
+{
+	if (AttackCount == 2)
+	{
+		AttackSection = "Attack2";
+		AttackSectionUUID = 1;
+	}
+
+	else if (AttackCount == 3)
+	{
+		AttackSection = "Attack3";
+		AttackSectionUUID = 2;
+	}
+
+	else
+	{
+		AttackCount = 1;
+		AttackSection = "Attack1";
+		AttackSectionUUID = 0;
+
+	}
+
+	
+	/** Play Fast Attack Montage by Section */
+	PlayAnimMontage(FastAttack, 1.0f, AttackSection);
+
+	/** Get Length of the Section being played */
+	AttackSectionLength = FastAttack->GetSectionLength(AttackSectionUUID);
+
 }
 
 void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
@@ -131,14 +163,22 @@ void ABattleMobaCharacter::OnResetVR()
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
+void ABattleMobaCharacter::OnFastAttack()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("OnFastAttack")));
+	AttackCount = AttackCount + 1;
+	ExecuteFastAttack();
+	
+}
+
 void ABattleMobaCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
-		Jump();
+	Jump();
 }
 
 void ABattleMobaCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
-		StopJumping();
+	StopJumping();
 }
 
 void ABattleMobaCharacter::TurnAtRate(float Rate)

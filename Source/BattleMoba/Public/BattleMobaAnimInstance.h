@@ -19,11 +19,18 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+public:
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	bool bMoving = true;
+
+
 protected:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	float Speed = 0.0f;
 
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
-	bool bMoving = true;
+	
+
+
 };
