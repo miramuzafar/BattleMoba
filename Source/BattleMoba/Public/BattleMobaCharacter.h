@@ -11,6 +11,9 @@ class ABattleMobaCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
+	//Replicated Network setup
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
@@ -61,17 +64,17 @@ protected:
 
 protected:
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
 	FName TeamName;
 
 	//Assign data table from bp 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UDataTable* ActionTable;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 	float Health;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 	float Stamina;
 
 protected:

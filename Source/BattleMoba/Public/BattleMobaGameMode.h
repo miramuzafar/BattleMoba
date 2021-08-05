@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "Net/UnrealNetwork.h"
 #include "BattleMobaGameMode.generated.h"
 
 UCLASS(minimalapi)
@@ -13,6 +14,8 @@ class ABattleMobaGameMode : public AGameModeBase
 
 public:
 	ABattleMobaGameMode();
+
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 };
 
 
