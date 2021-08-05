@@ -200,6 +200,42 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(UAnimMontage* C
 	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *ClientSkill->GetName()));
 
 	this->GetMesh()->GetAnimInstance()->Montage_Play(ClientSkill, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+
+	
+	//if (cooldown)
+	//{
+	//	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *ClientSkill->GetName()));
+
+	//	this->GetMesh()->GetAnimInstance()->Montage_Play(ClientSkill, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+	//}
+
+	//else
+	//{
+	//	if (AttackCount == 2)
+	//	{
+	//		AttackSection = "Attack2";
+	//		AttackSectionUUID = 1;
+	//	}
+
+	//	else if (AttackCount == 3)
+	//	{
+	//		AttackSection = "Attack3";
+	//		AttackSectionUUID = 2;
+	//	}
+
+	//	else
+	//	{
+	//		AttackCount = 1;
+	//		AttackSection = "Attack1";
+	//		AttackSectionUUID = 0;
+
+	//	}
+
+
+	//	/** Play Fast Attack Montage by Section */
+	//	PlayAnimMontage(FastAttack, 1.0f, AttackSection);
+	//}
+		
 }
 
 bool ABattleMobaCharacter::ServerExecuteAction_Validate(UAnimMontage* ServerSkill, float ServerDamage, bool cooldown)
