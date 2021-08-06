@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputLibrary.h"
 #include "GameFramework/Character.h"
 #include "BattleMobaCharacter.generated.h"
 
@@ -96,7 +97,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
 	int32 AttackSectionUUID = 0;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
 	FName AttackSection = "Attack1";
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
@@ -113,11 +114,11 @@ protected:
 
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
-	void ServerExecuteAction(UAnimMontage* ServerSkill, float ServerDamage, bool cooldown);
+	void ServerExecuteAction(FActionSkill SelectedRow);
 
 	//Skill replicate on all client
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
-	void MulticastExecuteAction(UAnimMontage* ClientSkill, float ClientDamage, bool cooldown);
+	void MulticastExecuteAction(FActionSkill SelectedRow);
 
 
 

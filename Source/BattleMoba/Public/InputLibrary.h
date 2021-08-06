@@ -14,12 +14,29 @@ struct FActionSkill : public FTableRowBase
 
 	bool isOnCD = false;
 
-	//Get key
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Label")
+	//If cooldown mechanic is applied
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cooldown")
 		bool IsUsingCD = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Label", meta = (EditCondition = "IsUsingCD"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cooldown", meta = (EditCondition = "IsUsingCD"))
 		float CDDuration = 0.0f;
+
+	//If translation mechanic is applied
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Translate Player")
+		bool UseTranslate = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Translate Player", meta = (EditCondition = "UseTranslate"))
+		float TranslateDist;
+
+	//If cooldown mechanic is applied
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Section")
+		bool UseSection = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Section", meta = (EditCondition = "UseSection"))
+		int Section = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Section", meta = (EditCondition = "UseSection"))
+		FName SectionName = "";
 
 	//Get key
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
