@@ -69,7 +69,6 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	check(PlayerInputComponent);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-	PlayerInputComponent->BindAction("FastAttack", IE_Pressed, this, &ABattleMobaCharacter::OnFastAttack);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ABattleMobaCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ABattleMobaCharacter::MoveRight);
@@ -143,6 +142,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 						break;
 					}
 				}
+				/**   current skill does not use cooldown and has multiple inputs */
 				else
 				{
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
@@ -255,7 +255,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(UAnimMontage* C
 		
 
 
-		/** Play Fast Attack Montage by Section */
+		/** Play Attack Montage by Section */
 		PlayAnimMontage(ClientSkill, 1.0f, AttackSection);
 
 		/** Get Length of the Section being played */
@@ -280,13 +280,6 @@ void ABattleMobaCharacter::OnResetVR()
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
-void ABattleMobaCharacter::OnFastAttack()
-{
-	/*GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("OnFastAttack")));
-	AttackCount = AttackCount + 1;
-	ExecuteFastAttack();*/
-	
-}
 
 void ABattleMobaCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
