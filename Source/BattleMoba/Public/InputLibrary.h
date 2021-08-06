@@ -18,7 +18,7 @@ struct FActionSkill : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Label")
 		bool IsUsingCD = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Label", meta = (EditCondition = "IsUsingCD"))
 		float CDDuration = 0.0f;
 
 	//Get key
