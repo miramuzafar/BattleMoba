@@ -87,8 +87,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
 	bool bAttacking = false;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
+	bool bFastAttack = false;
+
 	UPROPERTY(VisibleANywhere, BlueprintReadWrite, Category = "Input")
-	int AttackCount = 0;
+	int FastCount = 0;
+
+	UPROPERTY(VisibleANywhere, BlueprintReadWrite, Category = "Input")
+	int StrongCount = 0;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
 	int32 AttackSectionUUID = 0;
@@ -99,16 +105,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
 	float AttackSectionLength = 0.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ActionSkill")
-	UAnimMontage* FastAttack;
-
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
-
-	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
-	void ExecuteFastAttack();
 
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")

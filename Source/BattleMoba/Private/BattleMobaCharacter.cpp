@@ -90,36 +90,7 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ABattleMobaCharacter::OnResetVR);
 }
 
-void ABattleMobaCharacter::ExecuteFastAttack()
-{
-	if (AttackCount == 2)
-	{
-		AttackSection = "Attack2";
-		AttackSectionUUID = 1;
-	}
 
-	else if (AttackCount == 3)
-	{
-		AttackSection = "Attack3";
-		AttackSectionUUID = 2;
-	}
-
-	else
-	{
-		AttackCount = 1;
-		AttackSection = "Attack1";
-		AttackSectionUUID = 0;
-
-	}
-
-	
-	/** Play Fast Attack Montage by Section */
-	PlayAnimMontage(FastAttack, 1.0f, AttackSection);
-
-	/** Get Length of the Section being played */
-	AttackSectionLength = FastAttack->GetSectionLength(AttackSectionUUID);
-
-}
 
 void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 {
@@ -177,6 +148,31 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 					if (row->SkillMoveset != nullptr)
 					{
+						if (row->keys == "LeftMouseButton")
+						{
+							GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("LeftMouseButton Clicked")));
+							bFastAttack = true;
+							StrongCount = 0;
+							FastCount += 1;
+							if (FastCount > 3)
+							{
+								FastCount = 1;
+							}
+							
+						}
+
+						else if (row->keys == "RightMouseButton")
+						{
+							bFastAttack = false;
+							FastCount = 0;
+							StrongCount += 1;
+							if (StrongCount > 3)
+							{
+								StrongCount = 1;
+							}
+
+							
+						}
 						if (this->IsLocallyControlled())
 						{
 							//play the animation that visible to all clients
@@ -211,29 +207,59 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(UAnimMontage* C
 
 	else
 	{
-		if (AttackCount == 2)
+		if (bFastAttack)
 		{
-			AttackSection = "Attack2";
-			AttackSectionUUID = 1;
-		}
+			if (FastCount == 2) 
+			{
+				AttackSection = "Attack2";
+				AttackSectionUUID = 1;
+			}
 
-		else if (AttackCount == 3)
-		{
-			AttackSection = "Attack3";
-			AttackSectionUUID = 2;
+			else if (FastCount == 3)
+			{
+				AttackSection = "Attack3";
+				AttackSectionUUID = 2;
+			}
+
+			else
+			{
+				//FastCount = 1;
+				AttackSection = "Attack1";
+				AttackSectionUUID = 0;
+
+			}
 		}
 
 		else
 		{
-			AttackCount = 1;
-			AttackSection = "Attack1";
-			AttackSectionUUID = 0;
+			if (StrongCount == 2)
+			{
+				AttackSection = "Attack2";
+				AttackSectionUUID = 1;
+			}
 
+			else if (StrongCount == 3)
+			{
+				AttackSection = "Attack3";
+				AttackSectionUUID = 2;
+			}
+
+			else
+			{
+				//StrongCount = 1;
+				AttackSection = "Attack1";
+				AttackSectionUUID = 0;
+
+			}
 		}
+		
 
 
 		/** Play Fast Attack Montage by Section */
-		PlayAnimMontage(FastAttack, 1.0f, AttackSection);
+		PlayAnimMontage(ClientSkill, 1.0f, AttackSection);
+
+		/** Get Length of the Section being played */
+		//AttackSectionLength = FastAttack->GetSectionLength(AttackSectionUUID);
 	}
 		
 }
