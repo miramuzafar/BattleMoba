@@ -227,7 +227,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 							bFastAttack = false;
 							FastCount = 0;
 							StrongCount += 1;
-							if (StrongCount > 3)
+							if (StrongCount > 2)
 							{
 								StrongCount = 1;
 							}
