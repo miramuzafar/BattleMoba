@@ -42,9 +42,6 @@ protected:
 	/** Resets HMD orientation in VR. */
 	void OnResetVR();
 
-	/** Called for Fast Attack Input*/
-	void OnFastAttack();
-
 	/** Called for forwards/backward input */
 	void MoveForward(float Value);
 
