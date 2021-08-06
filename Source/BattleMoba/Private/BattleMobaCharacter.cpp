@@ -166,7 +166,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 							bFastAttack = false;
 							FastCount = 0;
 							StrongCount += 1;
-							if (StrongCount > 3)
+							if (StrongCount > 2)
 							{
 								StrongCount = 1;
 							}
@@ -236,12 +236,6 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(UAnimMontage* C
 			{
 				AttackSection = "Attack2";
 				AttackSectionUUID = 1;
-			}
-
-			else if (StrongCount == 3)
-			{
-				AttackSection = "Attack3";
-				AttackSectionUUID = 2;
 			}
 
 			else
