@@ -25,6 +25,10 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, TeamName);
 	DOREPLIFETIME(ABattleMobaCharacter, Health);
 	DOREPLIFETIME(ABattleMobaCharacter, Stamina);
+	DOREPLIFETIME(ABattleMobaCharacter, IsHit);
+	DOREPLIFETIME(ABattleMobaCharacter, InRagdoll);
+	DOREPLIFETIME(ABattleMobaCharacter, BoneName);
+	DOREPLIFETIME(ABattleMobaCharacter, HitLocation);
 	DOREPLIFETIME(ABattleMobaCharacter, AttackSection);
 }
 
@@ -61,6 +65,53 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+
+	LeftKickCol = CreateDefaultSubobject<UCapsuleComponent>(TEXT("LeftKickCol"));
+	LeftKickCol->SetupAttachment(GetMesh(), "calf_l");
+	LeftKickCol->SetRelativeLocation(FVector(-15.000000f, 0.000000f, 0.000000f));
+	LeftKickCol->SetRelativeRotation(FRotator(90.000000f, 0.0f, 179.999924f));
+	LeftKickCol->SetCapsuleHalfHeight(28);
+	LeftKickCol->SetCapsuleRadius(8);
+	LeftKickCol->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+
+	RightKickCol = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RightKickCol"));
+	RightKickCol->SetupAttachment(GetMesh(), "calf_r");
+	RightKickCol->SetRelativeLocation(FVector(15.000000f, 0.000000f, 0.000000f));
+	RightKickCol->SetRelativeRotation(FRotator(90.000000f, 0.0f, 179.999924f));
+	RightKickCol->SetCapsuleHalfHeight(28);
+	RightKickCol->SetCapsuleRadius(8);
+	RightKickCol->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+
+	LKickArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("LKickArrow"));
+	LKickArrow->SetupAttachment(LeftKickCol);
+	LKickArrow->SetRelativeRotation(FRotator(0.000000f, -90.000000f, 0.000000f));
+
+	RKickArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("RKickArrow"));
+	RKickArrow->SetupAttachment(RightKickCol);
+	RKickArrow->SetRelativeRotation(FRotator(0.000000f, 90.000000f, 0.000000f));
+
+	LeftPunchCol = CreateDefaultSubobject<UCapsuleComponent>(TEXT("LeftPunchCol"));
+	LeftPunchCol->SetupAttachment(GetMesh(), "hand_l");
+	LeftPunchCol->SetRelativeLocation(FVector(0.000000f, 0.000000f, 0.000000f));
+	LeftPunchCol->SetRelativeRotation(FRotator(90.000000f, 0.000000f, 0.000000f));
+	LeftPunchCol->SetCapsuleHalfHeight(22);
+	LeftPunchCol->SetCapsuleRadius(5);
+	LeftPunchCol->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+
+	RightPunchCol = CreateDefaultSubobject<UCapsuleComponent>(TEXT("RightPunchCol"));
+	RightPunchCol->SetupAttachment(GetMesh(), "hand_r");
+	RightPunchCol->SetRelativeLocation(FVector(0.000000f, 0.000000f, 0.000000f));
+	RightPunchCol->SetRelativeRotation(FRotator(90.000000f, 0.000000f, 0.000000f));
+	RightPunchCol->SetCapsuleHalfHeight(22);
+	RightPunchCol->SetCapsuleRadius(5);
+	RightPunchCol->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+
+	LPunchArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("LPunchArrow"));
+	LPunchArrow->SetupAttachment(GetMesh(), "lowerarm_l");
+
+	RPunchArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("RPunchArrow"));
+	RPunchArrow->SetupAttachment(GetMesh(), "lowerarm_r");
+	RPunchArrow->SetRelativeRotation(FRotator(0.000157f, -179.999084f, 0.000011f));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -347,6 +398,78 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 		//AttackSectionLength = FastAttack->GetSectionLength(AttackSectionUUID);
 	}
 		
+}
+
+bool ABattleMobaCharacter::DoDamage_Validate(AActor* HitActor)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::DoDamage_Implementation(AActor* HitActor)
+{
+	if (this != HitActor)
+	{
+		//ApplyDamage
+		this->damage = UGameplayStatics::ApplyDamage(HitActor, this->damage, nullptr, this, nullptr);
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Damage Applied: %f"), this->damage));
+		UE_LOG(LogTemp, Warning, TEXT("Damage Applied: %f"), this->damage);
+		//DrawDebugSphere(GetWorld(), Start, SphereKick.GetSphereRadius(), 2, FColor::Purple, false, 1, 0, 1);
+		//reset the bool so sweep trace can be executed again
+		//DoOnce = false;
+		//LeftKickColActivate = false;
+	}
+}
+
+bool ABattleMobaCharacter::FireTrace_Validate(FVector StartPoint, FVector EndPoint)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector EndPoint)
+{
+	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Enter Fire Trace")));
+	//Hit result storage
+	FHitResult HitRes;
+
+	//DrawDebugSphere(this->GetWorld(), StartPoint, 20.0f, 5, FColor::Purple, false , 1, 0, 1);
+
+	//Ignore self upon colliding
+	FCollisionQueryParams CP_LKick;
+	CP_LKick.AddIgnoredActor(this);
+
+	//Sphere trace by channel
+	bool DetectHit = this->GetWorld()->SweepSingleByChannel(HitRes, StartPoint, EndPoint, FQuat(), ECollisionChannel::ECC_PhysicsBody, FCollisionShape::MakeSphere(20.0f), CP_LKick);
+
+	if (DetectHit)
+	{
+		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Purple, FString::Printf(TEXT("Sweep channel")));
+		if (HitRes.Actor != this)
+		{
+			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Is not self")));
+			ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(HitRes.Actor);
+			if (hitChar && hitChar->InRagdoll == false)
+			{
+				if (DoOnce == false)
+				{
+					//Apply damage
+					DoOnce = true;
+					
+					hitChar->HitLocation = HitRes.Location;
+					hitChar->BoneName = HitRes.BoneName;
+					hitChar->IsHit = true;
+
+					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *hitChar->BoneName.ToString()));
+					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *HitRes.GetComponent()->GetName()));
+					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Impact: %s"), *hitChar->HitLocation.ToString()));
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Blocking hit is %s"), (hitChar->IsHit) ? TEXT("True") : TEXT("False")));
+					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
+					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("hitchar exist")));
+					DoDamage(hitChar);
+				}
+			}
+		}
+
+	}
 }
 
 bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow)
