@@ -160,6 +160,11 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 				//if current skill is using cooldown
 				if (row->IsUsingCD)
 				{
+					/**	Resets Fast/Strong input since using other input*/
+					bFastAttack = false;
+					StrongCount = 0;
+					FastCount = 0;
+
 					//if the skill is on cooldown, stop playing the animation, else play the skill animation
 					if (row->isOnCD == true)
 					{
