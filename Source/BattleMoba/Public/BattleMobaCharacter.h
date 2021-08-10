@@ -40,9 +40,6 @@ public:
 
 protected:
 
-	/** Resets HMD orientation in VR. */
-	void OnResetVR();
-
 	/** Called for forwards/backward input */
 	void MoveForward(float Value);
 
@@ -86,19 +83,13 @@ protected:
 	bool bAttacking = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
-	bool bFastAttack = false;
-
-	UPROPERTY(VisibleANywhere, BlueprintReadWrite, Category = "Input")
-	int FastCount = 0;
-
-	UPROPERTY(VisibleANywhere, BlueprintReadWrite, Category = "Input")
-	int StrongCount = 0;
+	bool bComboAttack = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
 	int32 AttackSectionUUID = 0;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
-	FName AttackSection = "Attack1";
+	FName AttackSection = "NormalAttack01";
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
 	float AttackSectionLength = 0.0f;
@@ -114,11 +105,15 @@ protected:
 
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
-	void ServerExecuteAction(FActionSkill SelectedRow);
+	void ServerExecuteAction(FActionSkill SelectedRow, FName MontageSection);
 
 	//Skill replicate on all client
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
-	void MulticastExecuteAction(FActionSkill SelectedRow);
+	void MulticastExecuteAction(FActionSkill SelectedRow, FName MontageSection);
+
+	//Get skills from input touch combo
+	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
+	void AttackCombo(FActionSkill SelectedRow);
 
 
 
