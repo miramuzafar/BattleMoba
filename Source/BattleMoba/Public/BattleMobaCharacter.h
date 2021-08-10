@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/PrimitiveComponent.h"
 #include "InputLibrary.h"
 #include "GameFramework/Character.h"
 #include "BattleMobaCharacter.generated.h"
@@ -22,6 +23,30 @@ class ABattleMobaCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UCapsuleComponent* LeftKickCol;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UCapsuleComponent* RightKickCol;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UArrowComponent* LKickArrow;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UArrowComponent* RKickArrow;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UCapsuleComponent* LeftPunchCol;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UCapsuleComponent* RightPunchCol;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UArrowComponent* LPunchArrow;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UArrowComponent* RPunchArrow;
 
 public:
 	ABattleMobaCharacter();
@@ -66,12 +91,29 @@ protected:
 
 protected:
 
+	float damage = 0.0f;
+
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
 	FName TeamName;
 
 	//Assign data table from bp 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UDataTable* ActionTable;
+
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+	bool IsHit;
+
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Anim")
+	bool InRagdoll;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Damage")
+	bool DoOnce = false;
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
+	FVector HitLocation;
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
+	FName BoneName = "pelvis";
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 	float Health;
@@ -98,6 +140,13 @@ protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
+
+	//Skill sent to server
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
+	void FireTrace(FVector StartPoint, FVector EndPoint);
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "HitReaction")
+	void DoDamage(AActor* HitActor);
 
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
