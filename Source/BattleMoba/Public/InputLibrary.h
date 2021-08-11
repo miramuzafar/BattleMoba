@@ -28,16 +28,14 @@ struct FActionSkill : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Translate Player", meta = (EditCondition = "UseTranslate"))
 		float TranslateDist;
 
-	//If cooldown mechanic is applied
+	//If combo mechanic is applied
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Section")
 		bool UseSection = false;
 
+	//How many sections are used in this montage
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Section", meta = (EditCondition = "UseSection"))
 		int Section = 0;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Section", meta = (EditCondition = "UseSection"))
-		FName SectionName = "";
-
+	
 	//Get key
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		FKey keys;
