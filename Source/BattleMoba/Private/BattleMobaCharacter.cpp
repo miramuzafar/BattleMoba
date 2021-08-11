@@ -296,7 +296,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 					StrongCount = 0;
 					FastCount = 0;
 
-					GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+					//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
 
 					//if the skill is on cooldown, stop playing the animation, else play the skill animation
 					if (row->isOnCD == true)
@@ -324,7 +324,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 								{
 									UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
 									row->isOnCD = false;
-									GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+									//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
 								});
 
 								//start cooldown the skill
@@ -449,6 +449,7 @@ bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill Selected
 
 void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
 	if (SelectedRow.isOnCD)
 	{
 		//if current montage consumes cooldown properties

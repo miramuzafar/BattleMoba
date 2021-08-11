@@ -12,6 +12,7 @@ struct FActionSkill : public FTableRowBase
 {
 	GENERATED_BODY()
 
+	UPROPERTY()
 		bool isOnCD = false;
 
 	//If cooldown mechanic is applied
