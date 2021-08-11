@@ -48,6 +48,10 @@ class ABattleMobaCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 		class UArrowComponent* RPunchArrow;
 
+	////3D UI On Player's head
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UWidgetComponent* W_DamageOutput;
+
 public:
 	ABattleMobaCharacter();
 
@@ -150,12 +154,28 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
 
+	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	//Get skills from input touch combo
+	UFUNCTION(BlueprintCallable, Category = "CollisionSetup")
+	void OnCombatColl(UCapsuleComponent* CombatColl);
+
+	//Get skills from input touch combo
+	UFUNCTION(BlueprintCallable, Category = "CollisionSetup")
+	void OffCombatColl(UCapsuleComponent* CombatColl);
+
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
 	void FireTrace(FVector StartPoint, FVector EndPoint);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "HitReaction")
 	void DoDamage(AActor* HitActor);
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "ReceiveDamage")
+	void HitReactionServer(AActor* HitActor, float DamageReceived);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
+	void HitReactionClient(AActor* HitActor, float DamageReceived);
 
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
@@ -168,8 +188,6 @@ protected:
 	//Skill replicate on all client
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
 	void MulticastExecuteAction(FActionSkill SelectedRow);
-
-
 
 public:
 	/** Returns CameraBoom subobject **/
