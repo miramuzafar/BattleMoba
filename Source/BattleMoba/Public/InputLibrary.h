@@ -12,7 +12,7 @@ struct FActionSkill : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	bool isOnCD = false;
+		bool isOnCD = false;
 
 	//If cooldown mechanic is applied
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cooldown")
@@ -28,6 +28,7 @@ struct FActionSkill : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Translate Player", meta = (EditCondition = "UseTranslate"))
 		float TranslateDist;
 
+	//If cooldown mechanic is applied
 	//If combo mechanic is applied
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Section")
 		bool UseSection = false;
@@ -35,7 +36,11 @@ struct FActionSkill : public FTableRowBase
 	//How many sections are used in this montage
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Section", meta = (EditCondition = "UseSection"))
 		int Section = 0;
-	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Section", meta = (EditCondition = "UseSection"))
+		FName SectionName = "";
+
+
 	//Get key
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		FKey keys;
@@ -71,5 +76,5 @@ UCLASS()
 class BATTLEMOBA_API UInputLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
-	
+
 };

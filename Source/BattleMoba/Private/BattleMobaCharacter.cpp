@@ -16,13 +16,10 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "Kismet/KismetStringLibrary.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ABattleMobaCharacter
 #include "InputLibrary.h"
-#include "BattleMobaAnimInstance.h"
-
 
 void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -55,6 +52,7 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
+	GetCharacterMovement()->JumpZVelocity = 600.f;
 	GetCharacterMovement()->AirControl = 0.2f;
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
@@ -137,6 +135,9 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+
 	PlayerInputComponent->BindAxis("MoveForward", this, &ABattleMobaCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ABattleMobaCharacter::MoveRight);
 
@@ -151,7 +152,27 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	// handle touch devices
 	PlayerInputComponent->BindTouch(IE_Pressed, this, &ABattleMobaCharacter::TouchStarted);
 	PlayerInputComponent->BindTouch(IE_Released, this, &ABattleMobaCharacter::TouchStopped);
+
+	// VR headset functionality
+	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ABattleMobaCharacter::OnResetVR);
 }
+
+void ABattleMobaCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FString Context;
+	for (auto& name : ActionTable->GetRowNames())
+	{
+		FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
+
+		if (row)
+		{
+			row->isOnCD = false;
+		}
+	}
+}
+
 
 float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
@@ -218,10 +239,17 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 		{
 			if (row->keys == Currkeys)
 			{
-				/**		If current skill is using cooldown*/
+				//if current skill is using cooldown
 				if (row->IsUsingCD)
 				{
-					/**		If the skill is on cooldown, stop playing the animation, else play the skill animation*/
+					/**	Resets Fast/Strong input since using other input*/
+					bFastAttack = false;
+					StrongCount = 0;
+					FastCount = 0;
+
+					GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+
+					//if the skill is on cooldown, stop playing the animation, else play the skill animation
 					if (row->isOnCD == true)
 					{
 						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
@@ -235,22 +263,22 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 						{
 							if (this->IsLocallyControlled())
 							{
-				
-								/**		Play the animation that visible to all clients*/
-								ServerExecuteAction(*row, "Default");
+								//play the animation that visible to all clients
+								ServerExecuteAction(*row);
 
-								/**		Setting up for cooldown properties*/
+								//setting up for cooldown properties
 								FTimerHandle handle;
 								FTimerDelegate TimerDelegate;
 
-								/**		Set the row boolean to false after finish cooldown timer*/
+								//set the row boolean to false after finish cooldown timer
 								TimerDelegate.BindLambda([row]()
 								{
 									UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
 									row->isOnCD = false;
+									GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
 								});
 
-								/**		Start cooldown the skill*/
+								//start cooldown the skill
 								this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
 								break;
 							}
@@ -258,154 +286,119 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 						break;
 					}
 				}
-				/**		If current skill changes translation*/
 				else if (row->UseTranslate)
 				{
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 					if (this->IsLocallyControlled())
 					{
-						/**		Play the animation that visible to all clients*/
-						ServerExecuteAction(*row, "Default");
+						//play the animation that visible to all clients
+						ServerExecuteAction(*row);
 						break;
 					}
 				}
-				/**		Current skill uses Montage Section*/
-				else if (row->UseSection)
-				{
-					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
-
-					if(row->SkillMoveset != nullptr)
-					{
-						AttackCombo(*row);
-						break;					
-					}
-				}
+				/**   current skill does not use cooldown and has multiple inputs */
 				else
 				{
-					
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
+					if (row->SkillMoveset != nullptr)
+					{
+						//Get section name
+						row->SectionName = row->SkillMoveset->GetSectionName(row->Section);
+
+						//if (bFastAttack)
+						//{
+						//	if (FastCount == 2)
+						//	{
+						//		AttackSection = "Attack2";
+						//		AttackSectionUUID = 1;
+						//	}
+
+						//	else if (FastCount == 3)
+						//	{
+						//		AttackSection = "Attack3";
+						//		AttackSectionUUID = 2;
+						//	}
+
+						//	else
+						//	{
+						//		//FastCount = 1;
+						//		AttackSection = "Attack1";
+						//		AttackSectionUUID = 0;
+						//	}
+						//}
+
+						//else
+						//{
+						//	if (StrongCount == 2)
+						//	{
+						//		AttackSection = "Attack2";
+						//		AttackSectionUUID = 1;
+						//	}
+
+						//	else if (StrongCount == 3)
+						//	{
+						//		AttackSection = "Attack3";
+						//		AttackSectionUUID = 2;
+						//	}
+
+						//	else
+						//	{
+						//		//StrongCount = 1;
+						//		AttackSection = "Attack1";
+						//		AttackSectionUUID = 0;
+
+						//	}
+						//}
+
+					/*	if (row->keys == "LeftMouseButton")
+						{
+							GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("LeftMouseButton Clicked")));
+							bFastAttack = true;
+							StrongCount = 0;
+							FastCount += 1;
+							if (FastCount > 3)
+							{
+								FastCount = 1;
+							}
+
+						}
+
+						else if (row->keys == "RightMouseButton")
+						{
+							bFastAttack = false;
+							FastCount = 0;
+							StrongCount += 1;
+							if (StrongCount > 2)
+							{
+								StrongCount = 1;
+							}
+						}*/
+						if (this->IsLocallyControlled())
+						{
+							//play the animation that visible to all clients
+							ServerExecuteAction(*row);
+						}
+
+						//Check if the next section is exist, otherwise reset to first index of the montage sections
+						if (row->Section >= (row->SkillMoveset->CompositeSections.Num() - 1))
+						{
+							row->Section = 0;
+						}
+						else
+							row->Section += 1;
+					}
 				}
 			}
 		}
 	}
 }
 
-void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
-{
-	UBattleMobaAnimInstance* AnimInst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
-
-	/**		Continues combo section of the montage*/
-	if (AnimInst->IsAnyMontagePlaying())
-	{
-		if (SelectedRow.Section == 3)
-		{
-			/**		Checks whether the current montage section contains "Combo" substring*/
-			FName CurrentSection = AnimInst->Montage_GetCurrentSection(AnimInst->GetCurrentActiveMontage());
-			if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("Combo"), false, false))
-			{
-				/**		Checks if current combo section contains "01" substring*/
-				if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("01"), false, false))
-				{
-					FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("02"));
-					AttackSection = FName(*NextSection);
-					if (IsLocallyControlled())
-					{
-						/**		Change next attack to combo montage section*/
-						ServerExecuteAction(SelectedRow, AttackSection);
-					}
-				}
-
-				else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("02"), false, false))
-				{
-					FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("03"));
-					AttackSection = FName(*NextSection);
-					if (IsLocallyControlled())
-					{
-						/**		Change next attack to combo montage section*/
-						ServerExecuteAction(SelectedRow, AttackSection);
-					}
-				}
-
-				else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("03"), false, false))
-				{
-					FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("01"));
-					AttackSection = FName(*NextSection);
-					if (IsLocallyControlled())
-					{
-						/**		Change next attack to combo montage section*/
-						ServerExecuteAction(SelectedRow, AttackSection);
-					}
-				}
-			}
-		}
-
-		else if (SelectedRow.Section == 2)
-		{
-			/**		Checks whether the current montage section contains "Combo" substring*/
-			FName CurrentSection = AnimInst->Montage_GetCurrentSection(AnimInst->GetCurrentActiveMontage());
-			if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("Combo"), false, false))
-			{
-				/**		Checks if current combo section contains "01" substring*/
-				if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("01"), false, false))
-				{
-					FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("02"));
-					AttackSection = FName(*NextSection);
-
-					if (IsLocallyControlled())
-					{
-						/**		Change next attack to combo montage section*/
-						ServerExecuteAction(SelectedRow, AttackSection);
-					}
-				}
-
-				else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("02"), false, false))
-				{
-					FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("01"));
-					AttackSection = FName(*NextSection);
-
-					if (IsLocallyControlled())
-					{
-						/**		Change next attack to combo montage section*/
-						ServerExecuteAction(SelectedRow, AttackSection);
-					}
-				}
-				
-			}
-		}
-			
-	}
-
-	/**		Plays the first section of the montage*/
-	else
-	{
-		bComboAttack = true;
-		FTimerHandle Timer;
-		FTimerDelegate TimerDelegate;
-		
-		if (IsLocallyControlled())
-		{
-			ServerExecuteAction(SelectedRow, "NormalAttack01");
-		}
-
-		float SectionLength = SelectedRow.SkillMoveset->GetSectionLength(0);
-
-		TimerDelegate.BindLambda([this]()
-		{
-			bComboAttack = false;
-			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT(" bCombo Attack resets to false")));
-		});
-
-		/**		Reset boolean after section ends*/
-		this->GetWorldTimerManager().SetTimer(Timer, TimerDelegate, SectionLength, false);
-	}
-
-}
-
-bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection)
+bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill SelectedRow)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection)
+void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow)
 {
 	if (SelectedRow.isOnCD)
 	{
@@ -417,7 +410,6 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 			this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
 		}
 	}
-
 	//if current montage will affects player location
 	else if (SelectedRow.UseTranslate)
 	{
@@ -433,29 +425,68 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 		TimerDelegate.BindLambda([this, SelectedRow]()
 		{
 			UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE TRANSLATE CHARACTER FORWARD"));
-			
+
 			FVector dashVector = FVector(this->GetCapsuleComponent()->GetForwardVector().X*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Y*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Z);
 
 			this->LaunchCharacter(dashVector, false, false);
 		});
 		//start cooldown the skill
-		this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, montageTimer/2.0f, false);
+		this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, montageTimer / 2.0f, false);
 	}
-
-	/**		If current montage has combo using montage section*/
-	else if (SelectedRow.UseSection)
-	{
-		/**		Play Attack Montage by Section */
-		PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current Montage is %s"), *MontageSection.ToString()));
-
-	}
-
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT(" No montage is being played")));
-	}
+		//if (bFastAttack)
+		//{
+		//	if (FastCount == 2) 
+		//	{
+		//		AttackSection = "Attack2";
+		//		AttackSectionUUID = 1;
+		//	}
 
+		//	else if (FastCount == 3)
+		//	{
+		//		AttackSection = "Attack3";
+		//		AttackSectionUUID = 2;
+		//	}
+
+		//	else
+		//	{
+		//		//FastCount = 1;
+		//		AttackSection = "Attack1";
+		//		AttackSectionUUID = 0;
+		//	}
+		//}
+
+		//else
+		//{
+		//	if (StrongCount == 2)
+		//	{
+		//		AttackSection = "Attack2";
+		//		AttackSectionUUID = 1;
+		//	}
+
+		//	else if (StrongCount == 3)
+		//	{
+		//		AttackSection = "Attack3";
+		//		AttackSectionUUID = 2;
+		//	}
+
+		//	else
+		//	{
+		//		//StrongCount = 1;
+		//		AttackSection = "Attack1";
+		//		AttackSectionUUID = 0;
+
+		//	}
+		//}
+
+		/** Play Attack Montage by Section */
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current section is %s"), ((*SelectedRow.SectionName.ToString()))));
+		PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, *SelectedRow.SectionName.ToString());
+
+		/** Get Length of the Section being played */
+		//AttackSectionLength = FastAttack->GetSectionLength(AttackSectionUUID);
+	}
 	this->damage = SelectedRow.Damage;
 }
 
@@ -524,7 +555,7 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 				{
 					//Apply damage
 					DoOnce = true;
-					
+
 					hitChar->HitLocation = HitRes.Location;
 					hitChar->BoneName = HitRes.BoneName;
 					hitChar->IsHit = true;
@@ -543,27 +574,31 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 	}
 }
 
-bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection)
+bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ServerExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection)
+void ABattleMobaCharacter::ServerExecuteAction_Implementation(FActionSkill SelectedRow)
 {
-	MulticastExecuteAction(SelectedRow, MontageSection);
+	MulticastExecuteAction(SelectedRow);
 }
 
 
+void ABattleMobaCharacter::OnResetVR()
+{
+	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
+}
 
 
 void ABattleMobaCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
-	
+	Jump();
 }
 
 void ABattleMobaCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
-	
+	StopJumping();
 }
 
 void ABattleMobaCharacter::TurnAtRate(float Rate)
@@ -594,12 +629,12 @@ void ABattleMobaCharacter::MoveForward(float Value)
 
 void ABattleMobaCharacter::MoveRight(float Value)
 {
-	if ( (Controller != NULL) && (Value != 0.0f) )
+	if ((Controller != NULL) && (Value != 0.0f))
 	{
 		// find out which way is right
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
-	
+
 		// get right vector 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		// add movement in that direction
