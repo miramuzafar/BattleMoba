@@ -5,6 +5,9 @@
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
+#include "Components/WidgetComponent.h"
+#include "Blueprint/WidgetTree.h"
+#include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/CameraComponent.h"
 #include "Components/PrimitiveComponent.h"
@@ -114,6 +117,17 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 	RPunchArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("RPunchArrow"));
 	RPunchArrow->SetupAttachment(GetMesh(), "lowerarm_r");
 	RPunchArrow->SetRelativeRotation(FRotator(0.000157f, -179.999084f, 0.000011f));
+
+	//WidgetComponent
+	W_DamageOutput = CreateDefaultSubobject<UWidgetComponent>(TEXT("W_DamageOutput"));
+	W_DamageOutput->SetupAttachment(RootComponent);
+	W_DamageOutput->SetRelativeLocation(FVector(0.000000f, 0.0f, 100.0f));
+	W_DamageOutput->InitWidget();
+
+	W_DamageOutput->SetWidgetSpace(EWidgetSpace::Screen);
+	W_DamageOutput->SetDrawAtDesiredSize(true);
+	//W_DamageOutput->SetVisibility(false);
+	W_DamageOutput->SetGenerateOverlapEvents(false);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -139,7 +153,58 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindTouch(IE_Released, this, &ABattleMobaCharacter::TouchStopped);
 }
 
+float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (this->GetLocalRole() == ROLE_Authority)
+	{
+		if (DamageCauser != this)
+		{
+			HitReactionServer(this, Damage);
+		}
+	}
+	return 0.0f;
+}
 
+bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::HitReactionServer_Implementation(AActor* HitActor, float DamageReceived)
+{
+	if (this->GetLocalRole() == ROLE_Authority)
+	{
+		if (HitActor == this)
+		{
+			HitReactionClient(HitActor, DamageReceived);
+		}
+	}
+}
+
+bool ABattleMobaCharacter::HitReactionClient_Validate(AActor* HitActor, float DamageReceived)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, float DamageReceived)
+{
+	if (HitActor == this)
+	{
+		if (this->InRagdoll == false)
+		{
+			if (this->Health >= DamageReceived)
+			{
+				float Temp = this->Health - DamageReceived;
+				if (Temp <= 0.0f)
+				{
+					Temp = 0.0f;
+				}
+				this->Health = Temp;
+				this->IsHit = false;
+			}
+		}
+	}
+}
 
 void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 {
@@ -390,7 +455,20 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT(" No montage is being played")));
 	}
-		
+
+	this->damage = SelectedRow.Damage;
+}
+
+void ABattleMobaCharacter::OnCombatColl(UCapsuleComponent* CombatColl)
+{
+	CombatColl->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CombatColl->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+}
+
+void ABattleMobaCharacter::OffCombatColl(UCapsuleComponent * CombatColl)
+{
+	CombatColl->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	DoOnce = false;
 }
 
 bool ABattleMobaCharacter::DoDamage_Validate(AActor* HitActor)

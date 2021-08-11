@@ -30,7 +30,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	float Speed = 0.0f;
 
-	
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int Switcher = 0;
 
 };
