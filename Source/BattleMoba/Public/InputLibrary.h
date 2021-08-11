@@ -12,7 +12,7 @@ struct FActionSkill : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Cooldown")
+	UPROPERTY()
 		bool isOnCD = false;
 
 	//If cooldown mechanic is applied
