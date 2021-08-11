@@ -103,6 +103,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
 		FName TeamName;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD", Meta = (ExposeOnSpawn = "true"))
+		UUserWidget* MainWidget;
+
 	//Assign data table from bp 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UDataTable* ActionTable;
@@ -122,8 +125,10 @@ protected:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FName BoneName = "pelvis";
 
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, BlueprintReadWrite, Category = "Status")
 		float Health;
+	UFUNCTION()
+		void OnRep_Health();
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		float Stamina;
@@ -158,6 +163,9 @@ protected:
 
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+	UFUNCTION(BlueprintCallable, Category = "HUDSetup")
+	void SetupWidget();
+
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "CollisionSetup")
 		void OnCombatColl(UCapsuleComponent* CombatColl);
@@ -190,8 +198,6 @@ protected:
 	//Skill replicate on all client
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
 		void MulticastExecuteAction(FActionSkill SelectedRow);
-
-
 
 public:
 	/** Returns CameraBoom subobject **/

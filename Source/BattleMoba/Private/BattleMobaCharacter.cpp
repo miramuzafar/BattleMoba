@@ -7,6 +7,7 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Components/WidgetComponent.h"
 #include "Blueprint/WidgetTree.h"
+#include "Components/TextBlock.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/CameraComponent.h"
@@ -131,6 +132,36 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 //////////////////////////////////////////////////////////////////////////
 // Input
 
+void ABattleMobaCharacter::OnRep_Health()
+{
+
+	UUserWidget* HPWidget = Cast<UUserWidget>(W_DamageOutput->GetUserWidgetObject());
+	if (HPWidget)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Player %s with %s Widget"), *GetDebugName(this), *HPWidget->GetFName().ToString()));
+		const FName hptext = FName(TEXT("HealthText"));
+		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
+
+		if (HealthText)
+		{
+			FString TheFloatStr = FString::SanitizeFloat(this->Health);
+
+			HealthText->SetText(FText::FromString(TheFloatStr));
+		}
+	}
+
+	//this->Health = UGestureInputsFunctions::UpdateProgressBarComponent(this->WidgetHUD, "HPBar", "Health", "HP", "Pain Meter", this->Health, this->MaxHealth);
+
+	/*if (this->IsLocallyControlled())
+	{
+		this->Health = UGestureInputsFunctions::UpdateProgressBarComponent(this->WidgetHUD, "HPBar", "Health", "HP", "Pain Meter", this->Health, this->MaxHealth);
+	}*/
+	/*if (!this->IsLocallyControlled())
+	{
+		float Health1 = UGestureInputsFunctions::UpdateProgressBarComponent(this->WidgetHUD, "HPBarMain_1", "Health_1", "HP", "Pain Meter", this->Health, this->MaxHealth);
+	}*/
+}
+
 void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up gameplay key bindings
@@ -186,6 +217,23 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 	return 0.0f;
 }
 
+void ABattleMobaCharacter::SetupWidget()
+{
+	UUserWidget* HPWidget = Cast<UUserWidget>(W_DamageOutput->GetUserWidgetObject());
+	if (HPWidget)
+	{
+		const FName hptext = FName(TEXT("HealthText"));
+		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
+
+		if (HealthText)
+		{
+			FString TheFloatStr = FString::SanitizeFloat(this->Health);
+
+			HealthText->SetText(FText::FromString(TheFloatStr));
+		}
+	}
+}
+
 bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived)
 {
 	return true;
@@ -222,6 +270,7 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 				}
 				this->Health = Temp;
 				this->IsHit = false;
+				OnRep_Health();
 			}
 		}
 	}
