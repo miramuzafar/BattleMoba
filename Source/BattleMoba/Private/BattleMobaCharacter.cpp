@@ -11,6 +11,7 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/CameraComponent.h"
+#include "Styling/SlateColor.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -29,6 +30,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ABattleMobaCharacter, TeamName);
+	DOREPLIFETIME(ABattleMobaCharacter, PlayerName);
 	DOREPLIFETIME(ABattleMobaCharacter, Health);
 	DOREPLIFETIME(ABattleMobaCharacter, Stamina);
 	DOREPLIFETIME(ABattleMobaCharacter, IsHit);
@@ -221,6 +223,8 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 
 void ABattleMobaCharacter::SetupWidget()
 {
+	OnRep_Team();
+
 	UUserWidget* HPWidget = Cast<UUserWidget>(W_DamageOutput->GetUserWidgetObject());
 	if (HPWidget)
 	{
@@ -232,6 +236,12 @@ void ABattleMobaCharacter::SetupWidget()
 			FString TheFloatStr = FString::SanitizeFloat(this->Health);
 
 			HealthText->SetText(FText::FromString(TheFloatStr));
+			if (TeamName == "Radiant")
+			{
+				HealthText->SetColorAndOpacity(FLinearColor(0.0, 1.0, 0.0, 1.0));
+			}
+			else
+				HealthText->SetColorAndOpacity(FLinearColor(1.0, 0.0, 0.0, 1.0));
 		}
 	}
 }
@@ -636,6 +646,21 @@ void ABattleMobaCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector L
 void ABattleMobaCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
 	StopJumping();
+}
+
+void ABattleMobaCharacter::OnRep_Team()
+{
+	UUserWidget* HPWidget = Cast<UUserWidget>(W_DamageOutput->GetUserWidgetObject());
+	if (HPWidget)
+	{
+		const FName hptext = FName(TEXT("TeamName"));
+		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
+
+		if (HealthText)
+		{
+			HealthText->SetText(FText::FromName(TeamName));
+		}
+	}
 }
 
 void ABattleMobaCharacter::TurnAtRate(float Rate)

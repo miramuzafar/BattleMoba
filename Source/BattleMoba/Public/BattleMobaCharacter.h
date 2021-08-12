@@ -101,7 +101,12 @@ protected:
 	float damage = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
+		FString PlayerName;
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Team, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
 		FName TeamName;
+	UFUNCTION()
+		void OnRep_Team();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD", Meta = (ExposeOnSpawn = "true"))
 		UUserWidget* MainWidget;
