@@ -78,4 +78,9 @@ class BATTLEMOBA_API UInputLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
+//public:
+//
+//	UFUNCTION(BlueprintPure, Category = "Rotation")
+//	static FRotator LookRotation(FVector lookAt, FVector upDirection);
+
 };

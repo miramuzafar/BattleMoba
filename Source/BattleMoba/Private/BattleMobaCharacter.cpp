@@ -19,6 +19,7 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetStringLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ABattleMobaCharacter
@@ -486,6 +487,10 @@ bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill Selected
 
 void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection)
 {
+	//Always facing camera direction when attacking
+	FRotator YawRotation = FRotator(this->GetActorRotation().Pitch, this->FollowCamera->GetComponentRotation().Yaw, this->GetActorRotation().Roll);
+	this->SetActorRotation(YawRotation);
+
 	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
 	if (SelectedRow.isOnCD)
 	{
@@ -596,7 +601,7 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 		{
 			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Is not self")));
 			ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(HitRes.Actor);
-			if (hitChar && hitChar->InRagdoll == false)
+			if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
 			{
 				if (DoOnce == false)
 				{
@@ -616,6 +621,8 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 					DoDamage(hitChar);
 				}
 			}
+			else
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Invalid target: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
 		}
 
 	}
