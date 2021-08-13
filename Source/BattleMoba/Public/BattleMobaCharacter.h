@@ -98,6 +98,9 @@ protected:
 
 protected:
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
+	float TraceDistance = 0.0f;
+
 	float damage = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
@@ -141,7 +144,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
 		bool bAttacking = false;
 
-	
+	//Damage to be dealt from the action
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Target")
+		bool TargetHead = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
 		int32 AttackSectionUUID = 0;
@@ -174,7 +179,7 @@ protected:
 
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void FireTrace(FVector StartPoint, FVector EndPoint);
+		void FireTrace(FVector StartPoint, FVector EndPoint, bool Head);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "HitReaction")
 		void DoDamage(AActor* HitActor);

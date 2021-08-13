@@ -39,6 +39,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, BoneName);
 	DOREPLIFETIME(ABattleMobaCharacter, HitLocation);
 	DOREPLIFETIME(ABattleMobaCharacter, AttackSection);
+	DOREPLIFETIME(ABattleMobaCharacter, TargetHead);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -132,6 +133,8 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 	W_DamageOutput->SetDrawAtDesiredSize(true);
 	//W_DamageOutput->SetVisibility(false);
 	W_DamageOutput->SetGenerateOverlapEvents(false);
+
+	TraceDistance = 2000.0f;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -319,6 +322,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 						if (row->SkillMoveset != nullptr)
 						{
+							TargetHead = row->TargetIsHead;
 							if (this->IsLocallyControlled())
 							{
 								//play the animation that visible to all clients
@@ -329,10 +333,11 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 								FTimerDelegate TimerDelegate;
 
 								//set the row boolean to false after finish cooldown timer
-								TimerDelegate.BindLambda([row]()
+								TimerDelegate.BindLambda([row, this]()
 								{
 									UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
 									row->isOnCD = false;
+									
 									//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
 								});
 
@@ -360,6 +365,8 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 					if (row->SkillMoveset != nullptr)
 					{
+						TargetHead = row->TargetIsHead;
+						
 						AttackCombo(*row);
 						break;
 						
@@ -473,6 +480,7 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 		{
 			bAttacking = false;
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT(" bCombo Attack resets to false")));
+			
 		});
 
 		/**		Reset boolean after section ends*/
@@ -552,6 +560,7 @@ void ABattleMobaCharacter::OffCombatColl(UCapsuleComponent * CombatColl)
 {
 	CombatColl->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	DoOnce = false;
+	TargetHead = false;
 }
 
 bool ABattleMobaCharacter::DoDamage_Validate(AActor* HitActor)
@@ -574,58 +583,119 @@ void ABattleMobaCharacter::DoDamage_Implementation(AActor* HitActor)
 	}
 }
 
-bool ABattleMobaCharacter::FireTrace_Validate(FVector StartPoint, FVector EndPoint)
+bool ABattleMobaCharacter::FireTrace_Validate(FVector StartPoint, FVector EndPoint, bool Head)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector EndPoint)
+void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector EndPoint, bool Head)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("Target Is Head: %s"), Head? TEXT("true") : TEXT("false")));
 	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Enter Fire Trace")));
 	//Hit result storage
 	FHitResult HitRes;
 
+	FVector loc;
+	FRotator rot;
+	FHitResult hit;
+
+	//GetController()->GetPlayerViewPoint(loc, rot);
+
+	//FVector dashVector = FVector(this->GetCapsuleComponent()->GetForwardVector().X*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Y*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Z);
+
+	FVector Start;
+	FVector End;
+
+	if (Head == true)
+	{
+		Start = FVector(this->GetArrowComponent()->GetComponentLocation().X, this->GetArrowComponent()->GetComponentLocation().Y, this->GetArrowComponent()->GetComponentLocation().Z + 50.0f);
+		End = this->GetCapsuleComponent()->GetForwardVector()*TraceDistance + Start;
+	}
+	else
+	{
+		Start = FVector(this->GetArrowComponent()->GetComponentLocation().X, this->GetArrowComponent()->GetComponentLocation().Y, this->GetArrowComponent()->GetComponentLocation().Z);
+		End = this->GetCapsuleComponent()->GetForwardVector()*TraceDistance + Start;
+	}
+
+	/*FVector Start = FVector(this->GetCapsuleComponent()->GetForwardVector());
+	FVector End = Start + (rot.Vector()*TraceDistance);*/
+
+	FCollisionQueryParams TraceParams;
+	TraceParams.AddIgnoredActor(this);
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(hit, Start, End, ECC_PhysicsBody, TraceParams);
+
+	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
+
+	if (bHit)
+	{
+		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Is not self")));
+		ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(hit.Actor);
+		if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
+		{
+			if (DoOnce == false)
+			{
+				//Apply damage
+				DoOnce = true;
+				DrawDebugBox(GetWorld(), hit.ImpactPoint, FVector(5, 5, 5), FColor::Emerald, false, 2.0f);
+				hitChar->HitLocation = hit.Location;
+				hitChar->BoneName = hit.BoneName;
+				hitChar->IsHit = true;
+
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *hitChar->BoneName.ToString()));
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *hit.GetComponent()->GetName()));
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Impact: %s"), *hitChar->HitLocation.ToString()));
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Blocking hit is %s"), (hitChar->IsHit) ? TEXT("True") : TEXT("False")));
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("hitchar exist")));
+				DoDamage(hitChar);
+			}
+		}
+		else
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Invalid target: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
+	}
+
 	//DrawDebugSphere(this->GetWorld(), StartPoint, 20.0f, 5, FColor::Purple, false , 1, 0, 1);
 
 	//Ignore self upon colliding
-	FCollisionQueryParams CP_LKick;
-	CP_LKick.AddIgnoredActor(this);
+	//FCollisionQueryParams CP_LKick;
+	//CP_LKick.AddIgnoredActor(this);
 
-	//Sphere trace by channel
-	bool DetectHit = this->GetWorld()->SweepSingleByChannel(HitRes, StartPoint, EndPoint, FQuat(), ECollisionChannel::ECC_PhysicsBody, FCollisionShape::MakeSphere(20.0f), CP_LKick);
+	////Sphere trace by channel
+	//bool DetectHit = this->GetWorld()->SweepSingleByChannel(HitRes, StartPoint, EndPoint, FQuat(), ECollisionChannel::ECC_PhysicsBody, FCollisionShape::MakeSphere(20.0f), CP_LKick);
 
-	if (DetectHit)
-	{
-		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Purple, FString::Printf(TEXT("Sweep channel")));
-		if (HitRes.Actor != this)
-		{
-			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Is not self")));
-			ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(HitRes.Actor);
-			if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
-			{
-				if (DoOnce == false)
-				{
-					//Apply damage
-					DoOnce = true;
+	//if (DetectHit)
+	//{
+	//	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Purple, FString::Printf(TEXT("Sweep channel")));
+	//	if (HitRes.Actor != this)
+	//	{
+	//		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Is not self")));
+	//		ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(HitRes.Actor);
+	//		if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
+	//		{
+	//			if (DoOnce == false)
+	//			{
+	//				//Apply damage
+	//				DoOnce = true;
 
-					hitChar->HitLocation = HitRes.Location;
-					hitChar->BoneName = HitRes.BoneName;
-					hitChar->IsHit = true;
+	//				hitChar->HitLocation = HitRes.Location;
+	//				hitChar->BoneName = HitRes.BoneName;
+	//				hitChar->IsHit = true;
 
-					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *hitChar->BoneName.ToString()));
-					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *HitRes.GetComponent()->GetName()));
-					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Impact: %s"), *hitChar->HitLocation.ToString()));
-					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Blocking hit is %s"), (hitChar->IsHit) ? TEXT("True") : TEXT("False")));
-					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
-					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("hitchar exist")));
-					DoDamage(hitChar);
-				}
-			}
-			else
-				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Invalid target: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
-		}
+	//				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *hitChar->BoneName.ToString()));
+	//				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *HitRes.GetComponent()->GetName()));
+	//				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Impact: %s"), *hitChar->HitLocation.ToString()));
+	//				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Blocking hit is %s"), (hitChar->IsHit) ? TEXT("True") : TEXT("False")));
+	//				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
+	//				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("hitchar exist")));
+	//				DoDamage(hitChar);
+	//			}
+	//		}
+	//		else
+	//			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Invalid target: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
+	//	}
 
-	}
+	//}
 }
 
 bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection)

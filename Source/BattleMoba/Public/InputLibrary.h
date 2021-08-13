@@ -41,7 +41,6 @@ struct FActionSkill : public FTableRowBase
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Section", meta = (EditCondition = "UseSection"))
 		FName SectionName = "";
 
-
 	//Get key
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		FKey keys;
@@ -53,6 +52,10 @@ struct FActionSkill : public FTableRowBase
 	//Damage to be dealt from the action
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		float Damage = 0.0f;
+
+	//Check if target hit is head
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target")
+		bool TargetIsHead = false;
 
 	//For array comparison
 	bool operator ==(const FActionSkill &other) const
