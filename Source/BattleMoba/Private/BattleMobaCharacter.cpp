@@ -808,39 +808,44 @@ void ABattleMobaCharacter::LookUpAtRate(float Rate)
 
 void ABattleMobaCharacter::MoveForward(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f))
+	if (AnimInsta)
 	{
-		if (AnimInsta->CanMove)
+		if ((Controller != NULL) && (Value != 0.0f))
 		{
-			// find out which way is forward
-			const FRotator Rotation = Controller->GetControlRotation();
-			const FRotator YawRotation(0, Rotation.Yaw, 0);
+			if (AnimInsta->CanMove)
+			{
+				// find out which way is forward
+				const FRotator Rotation = Controller->GetControlRotation();
+				const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-			// get forward vector
-			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-			AddMovementInput(Direction, Value);
+				// get forward vector
+				const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+				AddMovementInput(Direction, Value);
+			}
+
+
 		}
-		
-		
 	}
 }
 
 void ABattleMobaCharacter::MoveRight(float Value)
 {
-	if (AnimInsta->CanMove)
+	if (AnimInsta)
 	{
-		if ((Controller != NULL) && (Value != 0.0f))
+		if (AnimInsta->CanMove)
 		{
-			// find out which way is right
-			const FRotator Rotation = Controller->GetControlRotation();
-			const FRotator YawRotation(0, Rotation.Yaw, 0);
+			if ((Controller != NULL) && (Value != 0.0f))
+			{
+				// find out which way is right
+				const FRotator Rotation = Controller->GetControlRotation();
+				const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-			// get right vector 
-			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-			// add movement in that direction
-			AddMovementInput(Direction, Value);
+				// get right vector 
+				const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+				// add movement in that direction
+				AddMovementInput(Direction, Value);
 
+			}
 		}
 	}
-	
 }

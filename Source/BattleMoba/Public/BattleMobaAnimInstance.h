@@ -27,7 +27,6 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 		bool CanMove = true;
 
-
 protected:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
