@@ -6,6 +6,7 @@
 #include "Components/PrimitiveComponent.h"
 #include "InputLibrary.h"
 #include "GameFramework/Character.h"
+#include "BattleMobaAnimInstance.h"
 #include "BattleMobaCharacter.generated.h"
 
 UCLASS(config = Game)
@@ -148,14 +149,19 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Target")
 		bool TargetHead = false;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
-		int32 AttackSectionUUID = 0;
+		int32 AttackSectionUUID;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
 		FName AttackSection = "NormalAttack01";
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
 		float AttackSectionLength = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
+		bool bEnableMove = true;
+
+	UPROPERTY(VisibleAnywhere, Category = "Anims")
+		UBattleMobaAnimInstance* AnimInsta;
 
 protected:
 	// APawn interface
@@ -205,6 +211,10 @@ protected:
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
 		void AttackCombo(FActionSkill SelectedRow);
+
+	//Resets Movement Mode
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		void EnableMovementMode();
 
 public:
 	/** Returns CameraBoom subobject **/
