@@ -201,6 +201,11 @@ void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
+	
+	if (AnimInsta)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("AnimInsta %s"), ((*AnimInsta->GetFName().ToString()))));
+	}
 
 	FString Context;
 	for (auto& name : ActionTable->GetRowNames())
@@ -808,9 +813,9 @@ void ABattleMobaCharacter::LookUpAtRate(float Rate)
 
 void ABattleMobaCharacter::MoveForward(float Value)
 {
-	if (AnimInsta)
+	if ((Controller != NULL) && (Value != 0.0f))
 	{
-		if ((Controller != NULL) && (Value != 0.0f))
+		if (AnimInsta)
 		{
 			if (AnimInsta->CanMove)
 			{
@@ -822,19 +827,17 @@ void ABattleMobaCharacter::MoveForward(float Value)
 				const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 				AddMovementInput(Direction, Value);
 			}
-
-
 		}
 	}
 }
 
 void ABattleMobaCharacter::MoveRight(float Value)
 {
-	if (AnimInsta)
+	if ((Controller != NULL) && (Value != 0.0f))
 	{
-		if (AnimInsta->CanMove)
+		if (AnimInsta)
 		{
-			if ((Controller != NULL) && (Value != 0.0f))
+			if (AnimInsta->CanMove)
 			{
 				// find out which way is right
 				const FRotator Rotation = Controller->GetControlRotation();
@@ -844,7 +847,6 @@ void ABattleMobaCharacter::MoveRight(float Value)
 				const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 				// add movement in that direction
 				AddMovementInput(Direction, Value);
-
 			}
 		}
 	}
