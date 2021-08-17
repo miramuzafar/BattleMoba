@@ -6,6 +6,7 @@
 #include "Components/PrimitiveComponent.h"
 #include "InputLibrary.h"
 #include "GameFramework/Character.h"
+#include "BattleMobaAnimInstance.h"
 #include "BattleMobaCharacter.generated.h"
 
 UCLASS(config = Game)
@@ -148,8 +149,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Target")
 		bool TargetHead = false;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
-		int32 AttackSectionUUID = 0;
+		int32 AttackSectionUUID;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
 		FName AttackSection = "NormalAttack01";
@@ -163,6 +163,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
 	FTransform SpawnTransform;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
+		bool bEnableMove = true;
+
+	UPROPERTY(VisibleAnywhere, Category = "Anims")
+		UBattleMobaAnimInstance* AnimInsta;
 
 protected:
 	// APawn interface
@@ -216,6 +222,10 @@ protected:
 	//*********************Knockout and Respawn***********************************//
 	UFUNCTION(Reliable, Client, WithValidation, Category = "Knockout")
 	void RespawnCharacter();
+	
+	//Resets Movement Mode
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		void EnableMovementMode();
 
 public:
 	/** Returns CameraBoom subobject **/

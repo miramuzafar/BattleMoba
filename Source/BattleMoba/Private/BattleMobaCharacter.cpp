@@ -200,6 +200,7 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
 	FString Context;
 	for (auto& name : ActionTable->GetRowNames())
@@ -516,6 +517,12 @@ void ABattleMobaCharacter::RespawnCharacter_Implementation()
 	}
 }
 
+void ABattleMobaCharacter::EnableMovementMode()
+{
+	bEnableMove = true;
+	AnimInsta->CanMove = true;
+}
+
 bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection)
 {
 	return true;
@@ -525,9 +532,16 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 {
 	//Always facing camera direction when attacking
 	FRotator YawRotation = FRotator(this->GetActorRotation().Pitch, this->FollowCamera->GetComponentRotation().Yaw, this->GetActorRotation().Roll);
+
 	this->SetActorRotation(YawRotation);
 
 	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
+
+	/**		Disable movement on Action Skill*/
+	AnimInsta->CanMove = false;
+
+	FTimerHandle Delay;
+
 	if (SelectedRow.isOnCD)
 	{
 		//if current montage consumes cooldown properties
@@ -535,7 +549,11 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
-			this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+			float montageDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+		
+			/**		Enable movement back after montage finished playing*/
+			this->GetWorld()->GetTimerManager().SetTimer(Delay, this, &ABattleMobaCharacter::EnableMovementMode, montageDuration, false);
+			
 		}
 	}
 	//if current montage will affects player location
@@ -560,13 +578,18 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 		});
 		//start cooldown the skill
 		this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, montageTimer / 2.0f, false);
+
+		/**		Enable movement back after montage finished playing*/
+		this->GetWorld()->GetTimerManager().SetTimer(Delay, this, &ABattleMobaCharacter::EnableMovementMode, montageTimer, false);
 	}
+
 	else if (SelectedRow.UseSection)
 	{
 		/** Play Attack Montage by Section */
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current Section is %s"), *MontageSection.ToString()));
 		PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+		SelectedRow.SkillMoveset->GetSectionLength(AttackSectionUUID);
 
 	}
 
@@ -575,7 +598,10 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("STATEMENT ELSE")));
 	
 	}
+
 	this->damage = SelectedRow.Damage;
+	
+	
 }
 
 void ABattleMobaCharacter::OnCombatColl(UCapsuleComponent* CombatColl)
@@ -784,27 +810,37 @@ void ABattleMobaCharacter::MoveForward(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
-		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		if (AnimInsta->CanMove)
+		{
+			// find out which way is forward
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		// get forward vector
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Direction, Value);
+			// get forward vector
+			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+			AddMovementInput(Direction, Value);
+		}
+		
+		
 	}
 }
 
 void ABattleMobaCharacter::MoveRight(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f))
+	if (AnimInsta->CanMove)
 	{
-		// find out which way is right
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		if ((Controller != NULL) && (Value != 0.0f))
+		{
+			// find out which way is right
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		// get right vector 
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		// add movement in that direction
-		AddMovementInput(Direction, Value);
+			// get right vector 
+			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+			// add movement in that direction
+			AddMovementInput(Direction, Value);
+
+		}
 	}
+	
 }

@@ -24,13 +24,18 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	bool bMoving = true;
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+		bool CanMove = true;
+
 
 protected:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
-	float Speed = 0.0f;
+		float Speed = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int Switcher = 0;
+		int Switcher = 0;
 
+	
 };
+
