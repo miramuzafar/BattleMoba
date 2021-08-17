@@ -13,5 +13,11 @@ UCLASS()
 class BATTLEMOBA_API ABattleMobaPC : public APlayerController
 {
 	GENERATED_BODY()
+
+public:
+
+	//RequestRespawn
+	UFUNCTION(Reliable, Server, WithValidation, Category = "CollisionSetup")
+	void RespawnPawn(FTransform SpawnTransform);
 	
 };

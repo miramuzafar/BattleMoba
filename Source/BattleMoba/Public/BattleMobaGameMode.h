@@ -7,15 +7,26 @@
 #include "Net/UnrealNetwork.h"
 #include "BattleMobaGameMode.generated.h"
 
+class ABattleMobaCharacter;
+
 UCLASS(minimalapi)
 class ABattleMobaGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
+protected:
+
+	/*Blueprint Reference of ThirdPersonCharacter class*/
+	UPROPERTY(EditDefaultsOnly, Category = "ActorSpawning")
+	TSubclassOf<ABattleMobaCharacter> SpawnedActor;
+
 public:
 	ABattleMobaGameMode();
 
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "Respawn")
+	void RespawnRequested(APlayerController* playerController, FTransform SpawnTransform);
 };
 
 

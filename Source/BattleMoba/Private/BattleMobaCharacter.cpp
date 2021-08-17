@@ -25,6 +25,7 @@
 // ABattleMobaCharacter
 #include "InputLibrary.h"
 #include "BattleMobaAnimInstance.h"
+#include "BattleMobaPC.h"
 
 void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -219,7 +220,7 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 	{
 		if (DamageCauser != this)
 		{
-			HitReactionServer(this, Damage);
+			HitReactionClient(this, Damage);
 		}
 	}
 	return 0.0f;
@@ -228,6 +229,8 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 void ABattleMobaCharacter::SetupWidget()
 {
 	OnRep_Team();
+
+	SpawnTransform = this->GetActorTransform();
 
 	UUserWidget* HPWidget = Cast<UUserWidget>(W_DamageOutput->GetUserWidgetObject());
 	if (HPWidget)
@@ -283,6 +286,16 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 				if (Temp <= 0.0f)
 				{
 					Temp = 0.0f;
+					this->GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+					this->GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_PhysicsBody);
+					this->GetMesh()->SetSimulatePhysics(true);
+					this->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+					this->GetCharacterMovement()->DisableMovement();
+
+					if (GetLocalRole() == ROLE_Authority)
+					{
+						this->GetWorld()->GetTimerManager().SetTimer(this->RespawnTimer, this, &ABattleMobaCharacter::RespawnCharacter, 2.0f, false);
+					}
 				}
 				this->Health = Temp;
 				this->IsHit = false;
@@ -485,6 +498,21 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 
 		/**		Reset boolean after section ends*/
 		this->GetWorldTimerManager().SetTimer(Timer, TimerDelegate, SectionLength, false);
+	}
+}
+
+bool ABattleMobaCharacter::RespawnCharacter_Validate()
+{
+	return true;
+}
+
+void ABattleMobaCharacter::RespawnCharacter_Implementation()
+{
+	ABattleMobaPC* PC = Cast<ABattleMobaPC>(UGameplayStatics::GetPlayerController(this, 0));
+	if (PC)
+	{
+		PC->RespawnPawn(SpawnTransform);
+		PC->UnPossess();
 	}
 }
 

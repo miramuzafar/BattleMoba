@@ -157,6 +157,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
 		float AttackSectionLength = 0.0f;
 
+	//*********************Knockout and Respawn***********************************//
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
+	FTimerHandle RespawnTimer;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
+	FTransform SpawnTransform;
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -205,6 +212,10 @@ protected:
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
 		void AttackCombo(FActionSkill SelectedRow);
+
+	//*********************Knockout and Respawn***********************************//
+	UFUNCTION(Reliable, Client, WithValidation, Category = "Knockout")
+	void RespawnCharacter();
 
 public:
 	/** Returns CameraBoom subobject **/
