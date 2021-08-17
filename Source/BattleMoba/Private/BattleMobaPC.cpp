@@ -4,7 +4,10 @@
 #include "BattleMobaPC.h"
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
+
+//BattleMoba
 #include "BattleMobaGameMode.h"
+#include "BattleMobaPlayerState.h"
 
 bool ABattleMobaPC::RespawnPawn_Validate(FTransform SpawnTransform)
 {
@@ -19,7 +22,25 @@ void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 		//Destroy pawn before respawning
 		if (this->GetPawn())
 		{
-			this->GetPawn()->Destroy();
+			this->GetPawn()->SetLifeSpan(5.0f);
+		}
+
+		TArray<APlayerState*> PStates = UGameplayStatics::GetGameState(this)->PlayerArray;
+
+		ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(this->PlayerState);
+
+		for (auto& ps : PStates)
+		{
+			if (ps != this->PlayerState)
+			{
+				ABattleMobaPlayerState* pstate = Cast<ABattleMobaPlayerState>(ps);
+				if (PS->TeamName == pstate->TeamName)
+				{
+					APlayerController* pc = Cast<APlayerController>(UGameplayStatics::GetPlayerController(this, pstate->Pi));
+					this->SetViewTargetWithBlend(pc, 2.0f);
+					break;
+				}
+			}
 		}
 
 		FTimerHandle handle;
@@ -30,6 +51,6 @@ void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 		{
 			thisGameMode->RespawnRequested(this, SpawnTransform);
 		});
-		this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 3.0f, false);
+		this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 15.0f, false);
 	}
 }

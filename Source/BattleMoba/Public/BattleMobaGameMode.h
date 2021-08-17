@@ -21,6 +21,11 @@ protected:
 	TSubclassOf<ABattleMobaCharacter> SpawnedActor;
 
 public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ActorSpawning")
+	TArray<class ABattleMobaPC*> Players;
+
+public:
 	ABattleMobaGameMode();
 
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;

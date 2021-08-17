@@ -517,6 +517,7 @@ void ABattleMobaCharacter::RespawnCharacter_Implementation()
 	ABattleMobaPC* PC = Cast<ABattleMobaPC>(UGameplayStatics::GetPlayerController(this, 0));
 	if (PC)
 	{
+		
 		PC->RespawnPawn(SpawnTransform);
 		PC->UnPossess();
 	}

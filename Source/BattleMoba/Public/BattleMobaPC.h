@@ -17,7 +17,9 @@ class BATTLEMOBA_API ABattleMobaPC : public APlayerController
 public:
 
 	//RequestRespawn
-	UFUNCTION(Reliable, Server, WithValidation, Category = "CollisionSetup")
+	UFUNCTION(Reliable, Server, WithValidation, Category = "Respawn")
 	void RespawnPawn(FTransform SpawnTransform);
 	
+	/*UFUNCTION(Reliable, Server, WithValidation, Category = "Spectating")
+	void SpectatingAlly();*/
 };
