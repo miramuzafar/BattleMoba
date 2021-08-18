@@ -8,6 +8,7 @@
 //BattleMoba
 #include "BattleMobaGameMode.h"
 #include "BattleMobaPlayerState.h"
+#include "BattleMobaGameState.h"
 
 bool ABattleMobaPC::RespawnPawn_Validate(FTransform SpawnTransform)
 {
@@ -22,23 +23,39 @@ void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 		//Destroy pawn before respawning
 		if (this->GetPawn())
 		{
-			this->GetPawn()->SetLifeSpan(5.0f);
+			this->GetPawn()->Destroy();
 		}
 
-		TArray<APlayerState*> PStates = UGameplayStatics::GetGameState(this)->PlayerArray;
+		//get current controller playerstate
+		ABattleMobaPlayerState* thisstate = Cast<ABattleMobaPlayerState>(this->PlayerState);
 
-		ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(this->PlayerState);
-
-		for (auto& ps : PStates)
+		ABattleMobaGameState* gs = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+		if (gs)
 		{
-			if (ps != this->PlayerState)
+			TArray<APlayerState*> PStates = gs->PlayerArray;
+			for (auto& ps : PStates)
 			{
-				ABattleMobaPlayerState* pstate = Cast<ABattleMobaPlayerState>(ps);
-				if (PS->TeamName == pstate->TeamName)
+				if (this->PlayerState != ps)
 				{
-					APlayerController* pc = Cast<APlayerController>(UGameplayStatics::GetPlayerController(this, pstate->Pi));
-					this->SetViewTargetWithBlend(pc, 2.0f);
-					break;
+					ABattleMobaPlayerState* pstate = Cast<ABattleMobaPlayerState>(ps);
+					if (pstate->TeamName == thisstate->TeamName) //check for team this controller belongs to
+					{
+						if (ps->GetPawn())//check if current selected playerstate has a valid pawn
+						{
+							APlayerController* pc = Cast<APlayerController>(UGameplayStatics::GetPlayerController(this, pstate->Pi));
+							FTimerHandle handle;
+							FTimerDelegate TimerDelegate;
+
+							//set view target
+							TimerDelegate.BindLambda([this, pc]()
+							{
+								this->SetViewTargetWithBlend(pc, 2.0f);
+								//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current player is %s"), ((*pstate->GetPawn()->GetFName().ToString()))));
+							});
+							this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.02f, false);
+							break;
+						}
+					}
 				}
 			}
 		}
