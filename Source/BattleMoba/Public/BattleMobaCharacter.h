@@ -72,6 +72,9 @@ public:
 	UFUNCTION()
 		void OnRep_Team();
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		TArray<ABattleMobaCharacter*> DamageDealers;
+
 
 protected:
 
@@ -108,6 +111,9 @@ protected:
 	float TraceDistance = 0.0f;
 
 	float damage = 0.0f;
+
+	//TimerHandle for removing damage dealer array
+	FTimerHandle DealerTimer;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD", Meta = (ExposeOnSpawn = "true"))
 		UUserWidget* MainWidget;
@@ -176,6 +182,9 @@ protected:
 
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Damage")
+	void Setup3DWidgetVisibility();
+
 	UFUNCTION(BlueprintCallable, Category = "HUDSetup")
 	void SetupWidget();
 
@@ -199,6 +208,9 @@ protected:
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
 		void HitReactionClient(AActor* HitActor, float DamageReceived);
+
+	UFUNCTION()
+		void ClearDamageDealers();
 
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
