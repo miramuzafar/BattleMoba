@@ -629,11 +629,6 @@ bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill Selected
 
 void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection)
 {
-	//Always facing camera direction when attacking
-	FRotator YawRotation = FRotator(this->GetActorRotation().Pitch, this->FollowCamera->GetComponentRotation().Yaw, this->GetActorRotation().Roll);
-
-	this->SetActorRotation(YawRotation);
-
 	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
 
 	/**		Disable movement on Action Skill*/
@@ -649,6 +644,11 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 		//if current montage consumes cooldown properties
 		if (SelectedRow.IsUsingCD)
 		{
+			//Always facing camera direction when attacking
+			FRotator YawRotation = FRotator(this->GetActorRotation().Pitch, this->FollowCamera->GetComponentRotation().Yaw, this->GetActorRotation().Roll);
+
+			this->SetActorRotation(YawRotation);
+
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
 			float montageDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
@@ -687,6 +687,13 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 	else if (SelectedRow.UseSection)
 	{
+		//UKismetMathLibrary::GetYawPitchFromVector(this->FollowCamera->GetForwardVector(), Yaws, Pitchs);
+
+		//////Always facing camera direction when attacking
+		//FRotator YawRotation = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, Yaws, this->GetCapsuleComponent()->GetComponentRotation().Roll);
+
+		this->SetActorRotation(FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, this->FollowCamera->GetComponentRotation().Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll));
+
 		/** Play Attack Montage by Section */
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current Section is %s"), *MontageSection.ToString()));

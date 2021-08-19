@@ -96,4 +96,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "DateAndTime")
 		static FTimespan GetCurrentTime();
 
+	UFUNCTION(BlueprintPure, Category = "DateAndTime")
+		static FString DisplayMinutesSecondsFormat(float Seconds);
 };

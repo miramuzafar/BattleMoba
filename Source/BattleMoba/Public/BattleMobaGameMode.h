@@ -8,6 +8,7 @@
 #include "BattleMobaGameMode.generated.h"
 
 class ABattleMobaCharacter;
+class ABattleMobaGameState;
 
 UCLASS(minimalapi)
 class ABattleMobaGameMode : public AGameModeBase
@@ -16,9 +17,32 @@ class ABattleMobaGameMode : public AGameModeBase
 
 protected:
 
+	UPROPERTY(BlueprintReadWrite, Category = "Game State")
+		ABattleMobaGameState* GState;
+
 	/*Blueprint Reference of ThirdPersonCharacter class*/
 	UPROPERTY(EditDefaultsOnly, Category = "ActorSpawning")
 	TSubclassOf<ABattleMobaCharacter> SpawnedActor;
+
+	//************************Clock***********************//
+	UPROPERTY(BlueprintReadWrite, Category = "Clock")
+		float InitialTimer = 0.0f;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Clock")
+		float CurrentTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Clock")
+		float EndTime = 900.0f;
+
+	UPROPERTY()
+		FTimerHandle ClockTimer;
+
+protected:
+
+	virtual void BeginPlay() override;
+
+	UFUNCTION()
+		void StartClock();
 
 public:
 
