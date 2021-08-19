@@ -31,27 +31,28 @@ struct FActionSkill : public FTableRowBase
 
 	//If cooldown mechanic is applied
 	//If combo mechanic is applied
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Section")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UseSection")
 		bool UseSection = false;
 
 	//How many sections are used in this montage
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Section", meta = (EditCondition = "UseSection"))
 		int Section = 0;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Section", meta = (EditCondition = "UseSection"))
-		FName SectionName = "";
-
 	//Get key
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		FKey keys;
 
 	//Anim to be played on key pressed
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SkillAnim")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
 		UAnimMontage* SkillMoveset;
 
 	//Damage to be dealt from the action
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		float Damage = 0.0f;
+
+	//Anim to be played on hit detection
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
+		UAnimMontage* HitMoveset;
 
 	//Check if target hit is head
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target")

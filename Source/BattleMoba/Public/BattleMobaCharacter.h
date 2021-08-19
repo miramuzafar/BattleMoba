@@ -69,12 +69,16 @@ public:
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Team, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
 		FName TeamName;
+
 	UFUNCTION()
 		void OnRep_Team();
 
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
+		void TowerReceiveDamage(ADestructibleTower* Tower, float DamageApply);
+
+
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		TArray<ABattleMobaCharacter*> DamageDealers;
-
 
 protected:
 
@@ -112,6 +116,13 @@ protected:
 
 	float damage = 0.0f;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
+		UAnimMontage* HitReactionMoveset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
+		UAnimMontage* EnemyHitReactionMoveset;
+
+	
 	//TimerHandle for removing damage dealer array
 	FTimerHandle DealerTimer;
 
@@ -132,6 +143,9 @@ protected:
 		bool DoOnce = false;
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
+		FVector AttackerLocation;
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FVector HitLocation;
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
@@ -139,6 +153,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, BlueprintReadWrite, Category = "Status")
 		float Health;
+
 	UFUNCTION()
 		void OnRep_Health();
 
@@ -173,6 +188,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Anims")
 		UBattleMobaAnimInstance* AnimInsta;
 
+	UPROPERTY(VisibleAnywhere, Category = "Destructible")
+		ADestructibleTower* TowerActor;
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -204,10 +222,10 @@ protected:
 		void DoDamage(AActor* HitActor);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ReceiveDamage")
-		void HitReactionServer(AActor* HitActor, float DamageReceived);
+		void HitReactionServer(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
-		void HitReactionClient(AActor* HitActor, float DamageReceived);
+		void HitReactionClient(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset);
 
 	UFUNCTION()
 		void ClearDamageDealers();
@@ -235,6 +253,8 @@ protected:
 	//Resets Movement Mode
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		void EnableMovementMode();
+
+
 
 public:
 	/** Returns CameraBoom subobject **/

@@ -26,6 +26,7 @@
 #include "InputLibrary.h"
 #include "BattleMobaAnimInstance.h"
 #include "BattleMobaPC.h"
+#include "DestructibleTower.h"
 #include "BattleMobaGameState.h"
 #include "BattleMobaPlayerState.h"
 
@@ -203,11 +204,6 @@ void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
-	
-	if (AnimInsta)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("AnimInsta %s"), ((*AnimInsta->GetFName().ToString()))));
-	}
 
 	FString Context;
 	for (auto& name : ActionTable->GetRowNames())
@@ -228,7 +224,7 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 	{
 		if (DamageCauser != this)
 		{
-			HitReactionClient(this, Damage);
+			HitReactionClient(this, Damage, EnemyHitReactionMoveset);
 
 			ABattleMobaCharacter* damageChar = Cast<ABattleMobaCharacter>(DamageCauser);
 			if (this->DamageDealers.Contains(damageChar))
@@ -270,28 +266,28 @@ void ABattleMobaCharacter::SetupWidget()
 	//Setup3DWidgetVisibility();
 }
 
-bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived)
+bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived, UAnimMontage* HitMoveset)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::HitReactionServer_Implementation(AActor* HitActor, float DamageReceived)
+void ABattleMobaCharacter::HitReactionServer_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset)
 {
 	if (this->GetLocalRole() == ROLE_Authority)
 	{
 		if (HitActor == this)
 		{
-			HitReactionClient(HitActor, DamageReceived);
+			HitReactionClient(HitActor, DamageReceived, HitMoveset);
 		}
 	}
 }
 
-bool ABattleMobaCharacter::HitReactionClient_Validate(AActor* HitActor, float DamageReceived)
+bool ABattleMobaCharacter::HitReactionClient_Validate(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, float DamageReceived)
+void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset)
 {
 	if (HitActor == this)
 	{
@@ -300,6 +296,8 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 			if (this->Health >= DamageReceived)
 			{
 				float Temp = this->Health - DamageReceived;
+
+				/**		Knockout and respawn*/
 				if (Temp <= 0.0f)
 				{
 					Temp = 0.0f;
@@ -369,6 +367,15 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					}
 				}
 				this->Health = Temp;
+
+				/**		Force player to face Attacker*/
+				FRotator PlayerRot = UKismetMathLibrary::FindLookAtRotation(this->GetActorLocation(), AttackerLocation);
+				FRotator NewRot = FMath::RInterpTo(this->GetActorRotation(), PlayerRot, GetWorld()->GetDeltaSeconds(), 200.0f);
+				FRotator NewRot2 = FRotator(this->GetActorRotation().Pitch, NewRot.Yaw, this->GetActorRotation().Roll);
+				this->SetActorRotation(NewRot2);
+
+				/**		Play hit reaction animation on hit*/
+				float HitDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
 				this->IsHit = false;
 				OnRep_Health();
 
@@ -608,7 +615,11 @@ void ABattleMobaCharacter::RespawnCharacter_Implementation()
 void ABattleMobaCharacter::EnableMovementMode()
 {
 	bEnableMove = true;
-	AnimInsta->CanMove = true;
+
+	if (this->AnimInsta)
+	{
+		this->AnimInsta->CanMove = true;
+	}
 }
 
 bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection)
@@ -691,7 +702,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 	}
 
 	this->damage = SelectedRow.Damage;
-	
+	this->HitReactionMoveset = SelectedRow.HitMoveset;
 	
 }
 
@@ -776,6 +787,9 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Is not self")));
 		ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(hit.Actor);
+
+		TowerActor = Cast<ADestructibleTower>(hit.Actor);
+
 		if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
 		{
 			if (DoOnce == false)
@@ -786,6 +800,7 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 				hitChar->HitLocation = hit.Location;
 				hitChar->BoneName = hit.BoneName;
 				hitChar->IsHit = true;
+				hitChar->AttackerLocation = this->GetActorLocation();
 
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *hitChar->BoneName.ToString()));
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *hit.GetComponent()->GetName()));
@@ -793,7 +808,21 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Blocking hit is %s"), (hitChar->IsHit) ? TEXT("True") : TEXT("False")));
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("hitchar exist")));
+				hitChar->EnemyHitReactionMoveset = this->HitReactionMoveset;
 				DoDamage(hitChar);
+			}
+		}
+
+		/**		if Actor hit by line trace is Destructible Tower*/
+		else if (TowerActor && TowerActor->isDestroyed == false && TowerActor->TeamName != this->TeamName)
+		{
+			if (DoOnce == false)
+			{
+				DoOnce = true;
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("HIT TOWER!!!!!!!!!!!!!!!!!!!!!!")));
+				DrawDebugBox(GetWorld(), hit.ImpactPoint, FVector(5, 5, 5), FColor::Emerald, false, 2.0f);
+				TowerActor->IsHit = true;
+				TowerReceiveDamage(TowerActor, this->damage);
 			}
 		}
 		else
@@ -885,6 +914,34 @@ void ABattleMobaCharacter::OnRep_Team()
 	}
 }
 
+bool ABattleMobaCharacter::TowerReceiveDamage_Validate(ADestructibleTower * Tower, float DamageApply)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::TowerReceiveDamage_Implementation(ADestructibleTower * Tower, float DamageApply)
+{
+	if (Tower)
+	{
+		//ABattleMobaCharacter* Player = Cast<ABattleMobaCharacter>(HitActor);
+		Tower->CurrentHealth = FMath::Clamp(Tower->CurrentHealth - DamageApply, 0.0f, Tower->MaxHealth);
+		Tower->IsHit = false;
+		Tower->OnRep_UpdateHealth();
+
+		if (Tower->CurrentHealth <= 0.0f)
+		{
+			//Tower->CurrentHealth = 0.0f;
+			Tower->isDestroyed = true;
+
+
+			/**		Destroy Tower*/
+			//Tower->SetActorHiddenInGame(true);
+			Tower->OnRep_Destroy();
+		}
+	}
+	
+}
+
 void ABattleMobaCharacter::TurnAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
@@ -901,9 +958,9 @@ void ABattleMobaCharacter::MoveForward(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
-		if (AnimInsta)
+		if (this->AnimInsta)
 		{
-			if (AnimInsta->CanMove)
+			if (this->AnimInsta->CanMove)
 			{
 				// find out which way is forward
 				const FRotator Rotation = Controller->GetControlRotation();
@@ -921,9 +978,9 @@ void ABattleMobaCharacter::MoveRight(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
-		if (AnimInsta)
+		if (this->AnimInsta)
 		{
-			if (AnimInsta->CanMove)
+			if (this->AnimInsta->CanMove)
 			{
 				// find out which way is right
 				const FRotator Rotation = Controller->GetControlRotation();
