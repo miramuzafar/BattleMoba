@@ -65,7 +65,14 @@ public:
 		float BaseLookUpRate;
 
 
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Team, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
+		FName TeamName;
 
+	UFUNCTION()
+		void OnRep_Team();
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
+		void TowerReceiveDamage(ADestructibleTower* Tower, float DamageApply);
 
 
 protected:
@@ -107,10 +114,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
 		FString PlayerName;
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Team, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
-		FName TeamName;
-	UFUNCTION()
-		void OnRep_Team();
+	
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD", Meta = (ExposeOnSpawn = "true"))
 		UUserWidget* MainWidget;
@@ -136,6 +140,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, BlueprintReadWrite, Category = "Status")
 		float Health;
+
 	UFUNCTION()
 		void OnRep_Health();
 
@@ -169,6 +174,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Anims")
 		UBattleMobaAnimInstance* AnimInsta;
+
+	UPROPERTY(VisibleAnywhere, Category = "Destructible")
+		ADestructibleTower* TowerActor;
 
 protected:
 	// APawn interface
@@ -226,6 +234,8 @@ protected:
 	//Resets Movement Mode
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		void EnableMovementMode();
+
+
 
 public:
 	/** Returns CameraBoom subobject **/

@@ -26,6 +26,7 @@
 #include "InputLibrary.h"
 #include "BattleMobaAnimInstance.h"
 #include "BattleMobaPC.h"
+#include "DestructibleTower.h"
 
 void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -202,7 +203,7 @@ void ABattleMobaCharacter::BeginPlay()
 	Super::BeginPlay();
 	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 	
-	if (AnimInsta)
+	if (this->AnimInsta)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("AnimInsta %s"), ((*AnimInsta->GetFName().ToString()))));
 	}
@@ -525,7 +526,11 @@ void ABattleMobaCharacter::RespawnCharacter_Implementation()
 void ABattleMobaCharacter::EnableMovementMode()
 {
 	bEnableMove = true;
-	AnimInsta->CanMove = true;
+
+	if (this->AnimInsta)
+	{
+		this->AnimInsta->CanMove = true;
+	}
 }
 
 bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection)
@@ -543,7 +548,11 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
 
 	/**		Disable movement on Action Skill*/
-	AnimInsta->CanMove = false;
+	if (this->AnimInsta)
+	{
+		this->AnimInsta->CanMove = false;
+	}
+	
 
 	FTimerHandle Delay;
 
@@ -690,6 +699,9 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Is not self")));
 		ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(hit.Actor);
+
+		TowerActor = Cast<ADestructibleTower>(hit.Actor);
+
 		if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
 		{
 			if (DoOnce == false)
@@ -708,6 +720,19 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("hitchar exist")));
 				DoDamage(hitChar);
+			}
+		}
+
+		/**		if Actor hit by line trace is Destructible Tower*/
+		else if (TowerActor && TowerActor->isDestroyed == false && TowerActor->TeamName != this->TeamName)
+		{
+			if (DoOnce == false)
+			{
+				DoOnce = true;
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("HIT TOWER!!!!!!!!!!!!!!!!!!!!!!")));
+				DrawDebugBox(GetWorld(), hit.ImpactPoint, FVector(5, 5, 5), FColor::Emerald, false, 2.0f);
+				TowerActor->IsHit = true;
+				TowerReceiveDamage(TowerActor, this->damage);
 			}
 		}
 		else
@@ -799,6 +824,34 @@ void ABattleMobaCharacter::OnRep_Team()
 	}
 }
 
+bool ABattleMobaCharacter::TowerReceiveDamage_Validate(ADestructibleTower * Tower, float DamageApply)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::TowerReceiveDamage_Implementation(ADestructibleTower * Tower, float DamageApply)
+{
+	if (Tower)
+	{
+		//ABattleMobaCharacter* Player = Cast<ABattleMobaCharacter>(HitActor);
+		Tower->CurrentHealth = FMath::Clamp(Tower->CurrentHealth - DamageApply, 0.0f, Tower->MaxHealth);
+		Tower->IsHit = false;
+		Tower->OnRep_UpdateHealth();
+
+		if (Tower->CurrentHealth <= 0.0f)
+		{
+			//Tower->CurrentHealth = 0.0f;
+			Tower->isDestroyed = true;
+
+
+			/**		Destroy Tower*/
+			//Tower->SetActorHiddenInGame(true);
+			Tower->OnRep_Destroy();
+		}
+	}
+	
+}
+
 void ABattleMobaCharacter::TurnAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
@@ -815,9 +868,9 @@ void ABattleMobaCharacter::MoveForward(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
-		if (AnimInsta)
+		if (this->AnimInsta)
 		{
-			if (AnimInsta->CanMove)
+			if (this->AnimInsta->CanMove)
 			{
 				// find out which way is forward
 				const FRotator Rotation = Controller->GetControlRotation();
@@ -835,9 +888,9 @@ void ABattleMobaCharacter::MoveRight(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
-		if (AnimInsta)
+		if (this->AnimInsta)
 		{
-			if (AnimInsta->CanMove)
+			if (this->AnimInsta->CanMove)
 			{
 				// find out which way is right
 				const FRotator Rotation = Controller->GetControlRotation();
