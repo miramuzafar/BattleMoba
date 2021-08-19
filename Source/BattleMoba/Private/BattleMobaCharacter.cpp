@@ -27,6 +27,8 @@
 #include "BattleMobaAnimInstance.h"
 #include "BattleMobaPC.h"
 #include "DestructibleTower.h"
+#include "BattleMobaGameState.h"
+#include "BattleMobaPlayerState.h"
 
 void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -42,6 +44,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, HitLocation);
 	DOREPLIFETIME(ABattleMobaCharacter, AttackSection);
 	DOREPLIFETIME(ABattleMobaCharacter, TargetHead);
+	DOREPLIFETIME(ABattleMobaCharacter, DamageDealers);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -144,7 +147,6 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 
 void ABattleMobaCharacter::OnRep_Health()
 {
-
 	UUserWidget* HPWidget = Cast<UUserWidget>(W_DamageOutput->GetUserWidgetObject());
 	if (HPWidget)
 	{
@@ -228,6 +230,13 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 		if (DamageCauser != this)
 		{
 			HitReactionClient(this, Damage);
+
+			ABattleMobaCharacter* damageChar = Cast<ABattleMobaCharacter>(DamageCauser);
+			if (this->DamageDealers.Contains(damageChar))
+			{
+				this->DamageDealers.RemoveSingle(damageChar);
+			}
+			this->DamageDealers.Emplace(damageChar);
 		}
 	}
 	return 0.0f;
@@ -258,6 +267,8 @@ void ABattleMobaCharacter::SetupWidget()
 				HealthText->SetColorAndOpacity(FLinearColor(1.0, 0.0, 0.0, 1.0));
 		}
 	}
+
+	//Setup3DWidgetVisibility();
 }
 
 bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived)
@@ -293,6 +304,46 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 				if (Temp <= 0.0f)
 				{
 					Temp = 0.0f;
+
+					//Set player's death count
+					ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
+					if (ps)
+					{
+						ps->Death += 1;
+
+						FTimerHandle handle;
+						FTimerDelegate TimerDelegate;
+
+						//set the row boolean to false after finish cooldown timer
+						TimerDelegate.BindLambda([this]()
+						{
+							for (int32 i = 0; i < this->DamageDealers.Num(); i++)
+							{
+								if (this->DamageDealers[i] == this->DamageDealers.Last())
+								{
+									//Set killer Kill count
+									ABattleMobaPlayerState* pDealer = Cast<ABattleMobaPlayerState>(this->DamageDealers.Last()->GetPlayerState());
+									if (pDealer)
+									{
+										pDealer->Kill += 1;
+									}
+								}
+								else
+								{
+									//Set assist count
+									ABattleMobaPlayerState* pDealer = Cast<ABattleMobaPlayerState>(this->DamageDealers[i]->GetPlayerState());
+									if (pDealer)
+									{
+										pDealer->Assist += 1;
+									}
+								}
+							}
+						});
+
+						//start cooldown the skill
+						this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.02f, false);
+					}
+
 					this->GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 					this->GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_PhysicsBody);
 					this->GetMesh()->SetSimulatePhysics(true);
@@ -302,14 +353,45 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					if (GetLocalRole() == ROLE_Authority)
 					{
 						this->GetWorld()->GetTimerManager().SetTimer(this->RespawnTimer, this, &ABattleMobaCharacter::RespawnCharacter, 2.0f, false);
+
+						//Set Team Kills
+						ABattleMobaGameState* gs = Cast <ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+						if (gs)
+						{
+							if (gs->TeamA.Contains(this->GetPlayerState()->GetPlayerName()))
+							{
+								gs->TeamKillB += 1;
+							}
+							else if (gs->TeamB.Contains(this->GetPlayerState()->GetPlayerName()))
+							{
+								gs->TeamKillA += 1;
+							}
+						}
 					}
 				}
 				this->Health = Temp;
 				this->IsHit = false;
 				OnRep_Health();
+
+				//run clear damage dealers array
+				if (this->GetWorldTimerManager().IsTimerActive(this->DealerTimer))
+				{
+					this->GetWorldTimerManager().ClearTimer(this->DealerTimer);
+				}
+				this->GetWorldTimerManager().SetTimer(this->DealerTimer, this, &ABattleMobaCharacter::ClearDamageDealers, 5.0f, true);
 			}
 		}
 	}
+}
+
+void ABattleMobaCharacter::ClearDamageDealers()
+{
+	if (this->DamageDealers.IsValidIndex(0))
+	{
+		this->DamageDealers.RemoveAtSwap(0);
+	}
+	else
+		this->GetWorldTimerManager().ClearTimer(this->DealerTimer);
 }
 
 void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
@@ -518,6 +600,7 @@ void ABattleMobaCharacter::RespawnCharacter_Implementation()
 	ABattleMobaPC* PC = Cast<ABattleMobaPC>(UGameplayStatics::GetPlayerController(this, 0));
 	if (PC)
 	{
+		
 		PC->RespawnPawn(SpawnTransform);
 		PC->UnPossess();
 	}
@@ -548,11 +631,10 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
 
 	/**		Disable movement on Action Skill*/
-	if (this->AnimInsta)
+	if (AnimInsta != nullptr)
 	{
-		this->AnimInsta->CanMove = false;
+		AnimInsta->CanMove = false;
 	}
-	
 
 	FTimerHandle Delay;
 

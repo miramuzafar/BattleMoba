@@ -64,6 +64,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 		float BaseLookUpRate;
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
+		FString PlayerName;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Team, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
 		FName TeamName;
@@ -74,6 +76,9 @@ public:
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
 		void TowerReceiveDamage(ADestructibleTower* Tower, float DamageApply);
 
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		TArray<ABattleMobaCharacter*> DamageDealers;
 
 protected:
 
@@ -115,6 +120,8 @@ protected:
 		FString PlayerName;
 
 	
+	//TimerHandle for removing damage dealer array
+	FTimerHandle DealerTimer;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD", Meta = (ExposeOnSpawn = "true"))
 		UUserWidget* MainWidget;
@@ -187,6 +194,9 @@ protected:
 
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Damage")
+	void Setup3DWidgetVisibility();
+
 	UFUNCTION(BlueprintCallable, Category = "HUDSetup")
 	void SetupWidget();
 
@@ -210,6 +220,9 @@ protected:
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
 		void HitReactionClient(AActor* HitActor, float DamageReceived);
+
+	UFUNCTION()
+		void ClearDamageDealers();
 
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")

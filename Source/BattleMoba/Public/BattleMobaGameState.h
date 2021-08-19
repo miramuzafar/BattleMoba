@@ -25,4 +25,11 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	TArray <FString> TeamB;
+
+	//KDA setup
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	int TeamKillA = 0;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	int TeamKillB = 0;
 };

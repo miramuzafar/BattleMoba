@@ -2,12 +2,15 @@
 
 #include "BattleMobaGameMode.h"
 #include "Engine.h"
-#include "BattleMobaCharacter.h"
 #include "EngineUtils.h"
 #include "UObject/ConstructorHelpers.h"
 #include "GameFramework/PlayerStart.h"
 #include "Net/UnrealNetwork.h"
 #include "TimerManager.h"
+
+//BattleMoba
+#include "BattleMobaCharacter.h"
+#include "BattleMobaPlayerState.h"
 
 ABattleMobaGameMode::ABattleMobaGameMode()
 {
@@ -48,13 +51,19 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 			//Spawn actor
 			if (SpawnedActor)
 			{
-				/*if (playerController->GetPawn())
+				//Spawn actor from SpawnedActor subclass
+				ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, SpawnTransform);
+				if (pawn)
 				{
-					playerController->GetPawn()->Destroy();
-				}*/
-
-				FActorSpawnParameters SpawnInfo;
-				ABattleMobaCharacter* pawn = GetWorld()->SpawnActor<ABattleMobaCharacter>(SpawnedActor, SpawnTransform.GetLocation(), SpawnTransform.Rotator(), SpawnInfo);
+					ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(playerController->PlayerState);
+					if (PS)
+					{
+						//Assign team and player name before finish spawning
+						pawn->PlayerName = playerController->PlayerState->GetPlayerName();
+						pawn->TeamName = PS->TeamName;
+					}
+					UGameplayStatics::FinishSpawningActor(pawn, FTransform(SpawnTransform.Rotator(), SpawnTransform.GetLocation()));
+				}
 
 				FTimerHandle handle;
 				FTimerDelegate TimerDelegate;
