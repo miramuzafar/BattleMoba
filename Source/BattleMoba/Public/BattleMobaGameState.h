@@ -32,4 +32,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	int TeamKillB = 0;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	float Timer = 0.0f;
 };

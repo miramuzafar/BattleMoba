@@ -68,6 +68,6 @@ void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 		{
 			thisGameMode->RespawnRequested(this, SpawnTransform);
 		});
-		this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 15.0f, false);
+		this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 27.0f, false);
 	}
 }

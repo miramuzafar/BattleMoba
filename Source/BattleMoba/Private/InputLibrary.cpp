@@ -3,3 +3,17 @@
 
 #include "InputLibrary.h"
 
+FDateTime UInputLibrary::GetCurrentDateAndTime()
+{
+	return FDateTime::Now();
+}
+
+float UInputLibrary::GetCurrentTimeInMinute()
+{
+	return GetCurrentTime().GetTotalMinutes();
+}
+
+FTimespan UInputLibrary::GetCurrentTime()
+{
+	return GetCurrentDateAndTime().GetTimeOfDay();
+}
