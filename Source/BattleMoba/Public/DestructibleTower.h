@@ -45,7 +45,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UI)
 		class UUserWidget* W_DisplayHealth;
 
-	
+	UPROPERTY(EditAnywhere, Category = Materials)
+		class UMaterialInterface* Material1;
 
 
 

@@ -204,11 +204,6 @@ void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
-	
-	if (this->AnimInsta)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("AnimInsta %s"), ((*AnimInsta->GetFName().ToString()))));
-	}
 
 	FString Context;
 	for (auto& name : ActionTable->GetRowNames())
@@ -229,7 +224,7 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 	{
 		if (DamageCauser != this)
 		{
-			HitReactionClient(this, Damage);
+			HitReactionClient(this, Damage, EnemyHitReactionMoveset);
 
 			ABattleMobaCharacter* damageChar = Cast<ABattleMobaCharacter>(DamageCauser);
 			if (this->DamageDealers.Contains(damageChar))
@@ -271,28 +266,28 @@ void ABattleMobaCharacter::SetupWidget()
 	//Setup3DWidgetVisibility();
 }
 
-bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived)
+bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived, UAnimMontage* HitMoveset)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::HitReactionServer_Implementation(AActor* HitActor, float DamageReceived)
+void ABattleMobaCharacter::HitReactionServer_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset)
 {
 	if (this->GetLocalRole() == ROLE_Authority)
 	{
 		if (HitActor == this)
 		{
-			HitReactionClient(HitActor, DamageReceived);
+			HitReactionClient(HitActor, DamageReceived, HitMoveset);
 		}
 	}
 }
 
-bool ABattleMobaCharacter::HitReactionClient_Validate(AActor* HitActor, float DamageReceived)
+bool ABattleMobaCharacter::HitReactionClient_Validate(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, float DamageReceived)
+void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset)
 {
 	if (HitActor == this)
 	{
@@ -301,6 +296,8 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 			if (this->Health >= DamageReceived)
 			{
 				float Temp = this->Health - DamageReceived;
+
+				/**		Knockout and respawn*/
 				if (Temp <= 0.0f)
 				{
 					Temp = 0.0f;
@@ -370,6 +367,15 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					}
 				}
 				this->Health = Temp;
+
+				/**		Force player to face Attacker*/
+				FRotator PlayerRot = UKismetMathLibrary::FindLookAtRotation(this->GetActorLocation(), AttackerLocation);
+				FRotator NewRot = FMath::RInterpTo(this->GetActorRotation(), PlayerRot, GetWorld()->GetDeltaSeconds(), 200.0f);
+				FRotator NewRot2 = FRotator(this->GetActorRotation().Pitch, NewRot.Yaw, this->GetActorRotation().Roll);
+				this->SetActorRotation(NewRot2);
+
+				/**		Play hit reaction animation on hit*/
+				float HitDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
 				this->IsHit = false;
 				OnRep_Health();
 
@@ -696,7 +702,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 	}
 
 	this->damage = SelectedRow.Damage;
-	
+	this->HitReactionMoveset = SelectedRow.HitMoveset;
 	
 }
 
@@ -794,6 +800,7 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 				hitChar->HitLocation = hit.Location;
 				hitChar->BoneName = hit.BoneName;
 				hitChar->IsHit = true;
+				hitChar->AttackerLocation = this->GetActorLocation();
 
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *hitChar->BoneName.ToString()));
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *hit.GetComponent()->GetName()));
@@ -801,6 +808,7 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Blocking hit is %s"), (hitChar->IsHit) ? TEXT("True") : TEXT("False")));
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("hitchar exist")));
+				hitChar->EnemyHitReactionMoveset = this->HitReactionMoveset;
 				DoDamage(hitChar);
 			}
 		}

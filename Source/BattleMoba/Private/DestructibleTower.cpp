@@ -40,6 +40,8 @@ ADestructibleTower::ADestructibleTower()
 	TowerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TowerMesh"));
 	TowerMesh->SetupAttachment(RootComponent);
 	TowerMesh->SetCollisionProfileName("BlockAll");
+
+	Material1 = CreateDefaultSubobject<UMaterialInterface>("Material1");
 	
 
 	isDestroyed = false;
@@ -65,7 +67,7 @@ void ADestructibleTower::OnRep_UpdateHealth()
 {
 	if (W_DisplayHealth)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Player %s with %s Widget"), *GetDebugName(this), *W_DisplayHealth->GetFName().ToString()));
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Player %s with %s Widget"), *GetDebugName(this), *W_DisplayHealth->GetFName().ToString()));
 		const FName hptext = FName(TEXT("HealthText"));
 		UTextBlock* HealthText = (UTextBlock*)(W_DisplayHealth->WidgetTree->FindWidget(hptext));
 
@@ -80,13 +82,19 @@ void ADestructibleTower::OnRep_UpdateHealth()
 
 void ADestructibleTower::OnRep_Destroy()
 {
-	if (DynamicMaterial)
+	if (Material1 != nullptr)
 	{
-		/*float blend = 0.5f + FMath::Cos(GetWorld()->TimeSeconds) / 2;
-		DynamicMaterial->SetScalarParameterValue(TEXT("Blend"), blend);*/
-
-		DynamicMaterial->SetVectorParameterValue(TEXT("Colour"), FLinearColor::Yellow);
+		TowerMesh->SetMaterial(0, Material1);
 	}
+	
+	//if (DynamicMaterial)
+	//{
+	//	/*float blend = 0.5f + FMath::Cos(GetWorld()->TimeSeconds) / 2;
+	//	DynamicMaterial->SetScalarParameterValue(TEXT("Blend"), blend);*/
+	//	//Constant3Vector
+	//	DynamicMaterial->SetVectorParameterValue(TEXT("Colour"), FLinearColor::Yellow);
+	//	
+	//}
 	
 }
 
@@ -113,10 +121,10 @@ void ADestructibleTower::BeginPlay()
 
 	W_DisplayHealth = Cast<UUserWidget>(W_Health->GetUserWidgetObject());
 	
-	auto Material = TowerMesh->GetMaterial(0);
+	/*auto Material = TowerMesh->GetMaterial(0);
 	DynamicMaterial = UMaterialInstanceDynamic::Create(Material, NULL);
 	TowerMesh->SetMaterial(0, DynamicMaterial);
-	DynamicMaterial->SetVectorParameterValue(TEXT("Colour"), FLinearColor::Red);
+	DynamicMaterial->SetVectorParameterValue(TEXT("Colour"), FLinearColor::Red);*/
 }
 
 

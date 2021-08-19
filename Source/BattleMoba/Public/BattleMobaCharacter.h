@@ -116,8 +116,11 @@ protected:
 
 	float damage = 0.0f;
 
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
-		FString PlayerName;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
+		UAnimMontage* HitReactionMoveset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
+		UAnimMontage* EnemyHitReactionMoveset;
 
 	
 	//TimerHandle for removing damage dealer array
@@ -138,6 +141,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Damage")
 		bool DoOnce = false;
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
+		FVector AttackerLocation;
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FVector HitLocation;
@@ -216,10 +222,10 @@ protected:
 		void DoDamage(AActor* HitActor);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ReceiveDamage")
-		void HitReactionServer(AActor* HitActor, float DamageReceived);
+		void HitReactionServer(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
-		void HitReactionClient(AActor* HitActor, float DamageReceived);
+		void HitReactionClient(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset);
 
 	UFUNCTION()
 		void ClearDamageDealers();
