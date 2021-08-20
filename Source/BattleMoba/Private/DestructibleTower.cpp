@@ -88,15 +88,20 @@ void ADestructibleTower::OnRep_Destroy()
 		TowerMesh->SetMaterial(0, Material1);
 	}
 
-	if (this->isDestroyed && this->TeamName == "Dire")
+	if (GameState != nullptr)
 	{
-		GameState->Winner = "Dire Wins";
-	}
+		if (this->isDestroyed && this->TeamName == "Radiant")
+		{
+			GameState->Winner = "Dire Wins";
+		}
 
-	else if (this->isDestroyed && this->TeamName == "Radiant")
-	{
-		GameState->Winner = "Radiant Wins";
+		else if (this->isDestroyed && this->TeamName == "Dire")
+		{
+			GameState->Winner = "Radiant Wins";
+		}
+		
 	}
+	
 	
 	//if (DynamicMaterial)
 	//{
