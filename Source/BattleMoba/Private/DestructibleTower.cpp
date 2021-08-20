@@ -90,6 +90,7 @@ void ADestructibleTower::OnRep_Destroy()
 
 	if (GameState != nullptr)
 	{
+		// clear timer dari game mode udlu
 		if (this->isDestroyed && this->TeamName == "Radiant")
 		{
 			GameState->Winner = "Dire Wins";
