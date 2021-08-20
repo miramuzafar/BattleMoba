@@ -11,6 +11,50 @@
 //BattleMoba
 #include "BattleMobaCharacter.h"
 #include "BattleMobaPlayerState.h"
+#include "BattleMobaGameState.h"
+
+void ABattleMobaGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	//sETTING UP GAME STATE
+	GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+
+	//Get Initial time
+	if (HasAuthority())
+	{
+		InitialTimer = UGameplayStatics::GetGameState(this)->GetServerWorldTimeSeconds();
+
+		//Start game time
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Start Timer")));
+		GetWorldTimerManager().SetTimer(ClockTimer, this, &ABattleMobaGameMode::StartClock, 1.0f, true);
+	}
+}
+
+void ABattleMobaGameMode::StartClock()
+{
+	if (CurrentTime < EndTime)
+	{
+		//Get current timer value
+		CurrentTime = GState->GetServerWorldTimeSeconds() - InitialTimer;
+		GState->CurrentTime = CurrentTime;
+	}
+	else
+	{
+		//Stops the timer and check for winners
+		GetWorldTimerManager().ClearTimer(ClockTimer);
+		if (GState->TeamKillA > GState->TeamKillB)
+		{
+			GState->Winner = "Radiant Wins";
+		}
+		else if (GState->TeamKillB > GState->TeamKillA)
+		{
+			GState->Winner = "Dire Wins";
+		}
+		else
+			GState->Winner = "Draw";
+	}
+}
 
 ABattleMobaGameMode::ABattleMobaGameMode()
 {

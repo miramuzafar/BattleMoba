@@ -21,15 +21,25 @@ public:
 
 	//--------------------Teams setup-------------------------//
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
-	TArray <FString> TeamA;
+		TArray <FString> TeamA;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
-	TArray <FString> TeamB;
+		TArray <FString> TeamB;
 
 	//KDA setup
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
-	int TeamKillA = 0;
+		int TeamKillA = 0;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
-	int TeamKillB = 0;
+		int TeamKillB = 0;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+		float Timer = 0.0f;
+
+	//------------------Clock--------------------------//
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Clock")
+		float CurrentTime = 0.0f;
+
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Clock")
+		FString Winner;
 };

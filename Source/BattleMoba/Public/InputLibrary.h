@@ -82,9 +82,20 @@ class BATTLEMOBA_API UInputLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
-//public:
+public:
 //
 //	UFUNCTION(BlueprintPure, Category = "Rotation")
 //	static FRotator LookRotation(FVector lookAt, FVector upDirection);
 
+	UFUNCTION(BlueprintCallable, Category = "DateAndTime")
+		static FDateTime GetCurrentDateAndTime();
+
+	UFUNCTION(BlueprintCallable, Category = "DateAndTime")
+		static float GetCurrentTimeInMinute();
+
+	UFUNCTION(BlueprintCallable, Category = "DateAndTime")
+		static FTimespan GetCurrentTime();
+
+	UFUNCTION(BlueprintPure, Category = "DateAndTime")
+		static FString DisplayMinutesSecondsFormat(float Seconds);
 };
