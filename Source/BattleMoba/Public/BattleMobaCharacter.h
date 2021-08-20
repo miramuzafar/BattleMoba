@@ -60,6 +60,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 		float BaseTurnRate;
 
+	UPROPERTY()
+	float YawRate = 0.0f;
+
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 		float BaseLookUpRate;
@@ -142,6 +145,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Damage")
 		bool DoOnce = false;
 
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Rotate")
+		bool Rotate = false;
+
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FVector AttackerLocation;
 
@@ -198,7 +204,15 @@ protected:
 	virtual void BeginPlay() override;
 	// End of APawn interface
 
+	virtual void Tick(float DeltaTime) override;
+
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "Transformation")
+	void ServerRotateToCameraView(float DeltaSeconds);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "Transformation")
+	void RotateToCameraView(float DeltaSeconds);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Damage")
 	void Setup3DWidgetVisibility();

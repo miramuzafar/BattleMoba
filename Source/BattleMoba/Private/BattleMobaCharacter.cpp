@@ -45,6 +45,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, AttackSection);
 	DOREPLIFETIME(ABattleMobaCharacter, TargetHead);
 	DOREPLIFETIME(ABattleMobaCharacter, DamageDealers);
+	DOREPLIFETIME(ABattleMobaCharacter, Rotate);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -218,6 +219,20 @@ void ABattleMobaCharacter::BeginPlay()
 }
 
 
+void ABattleMobaCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (Rotate == true)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+		if (this->IsLocallyControlled())
+		{
+			ServerRotateToCameraView(DeltaTime);
+		}
+	}
+}
+
 float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	if (this->GetLocalRole() == ROLE_Authority)
@@ -235,6 +250,29 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 		}
 	}
 	return 0.0f;
+}
+
+bool ABattleMobaCharacter::ServerRotateToCameraView_Validate(float DeltaSeconds)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerRotateToCameraView_Implementation(float DeltaSeconds)
+{
+	RotateToCameraView(DeltaSeconds);
+}
+
+bool ABattleMobaCharacter::RotateToCameraView_Validate(float DeltaSeconds)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::RotateToCameraView_Implementation(float DeltaSeconds)
+{
+	FMinimalViewInfo DesiredView;
+	this->FollowCamera->GetCameraView(DeltaSeconds, DesiredView);
+
+	this->GetCapsuleComponent()->SetWorldRotation(FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, DesiredView.Rotation.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll));
 }
 
 void ABattleMobaCharacter::SetupWidget()
@@ -415,7 +453,6 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 				//if current skill is using cooldown
 				if (row->IsUsingCD)
 				{
-
 					//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
 
 					//if the skill is on cooldown, stop playing the animation, else play the skill animation
@@ -644,11 +681,10 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 		//if current montage consumes cooldown properties
 		if (SelectedRow.IsUsingCD)
 		{
-			//Always facing camera direction when attacking
-			FRotator YawRotation = FRotator(this->GetActorRotation().Pitch, this->FollowCamera->GetComponentRotation().Yaw, this->GetActorRotation().Roll);
-
-			this->SetActorRotation(YawRotation);
-
+			if (Rotate == false)
+			{
+				Rotate = true;
+			}
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
 			float montageDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
@@ -661,6 +697,10 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 	//if current montage will affects player location
 	else if (SelectedRow.UseTranslate)
 	{
+		if (Rotate == true)
+		{
+			Rotate = false;
+		}
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 
 		float montageTimer = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
@@ -687,13 +727,10 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 	else if (SelectedRow.UseSection)
 	{
-		//UKismetMathLibrary::GetYawPitchFromVector(this->FollowCamera->GetForwardVector(), Yaws, Pitchs);
-
-		//////Always facing camera direction when attacking
-		//FRotator YawRotation = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, Yaws, this->GetCapsuleComponent()->GetComponentRotation().Roll);
-
-		this->SetActorRotation(FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, this->FollowCamera->GetComponentRotation().Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll));
-
+		if (Rotate == false)
+		{
+			Rotate = true;
+		}
 		/** Play Attack Montage by Section */
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current Section is %s"), *MontageSection.ToString()));
@@ -704,8 +741,11 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 	else
 	{
+		if (Rotate == true)
+		{
+			Rotate = false;
+		}
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("STATEMENT ELSE")));
-	
 	}
 
 	this->damage = SelectedRow.Damage;
@@ -953,6 +993,7 @@ void ABattleMobaCharacter::TurnAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+	YawRate = Rate;
 }
 
 void ABattleMobaCharacter::LookUpAtRate(float Rate)
