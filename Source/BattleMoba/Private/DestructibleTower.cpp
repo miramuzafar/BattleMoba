@@ -11,7 +11,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "BattleMobaGameState.h"
-
+#include "BattleMobaGameMode.h"
 
 void ADestructibleTower::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -88,9 +88,11 @@ void ADestructibleTower::OnRep_Destroy()
 		TowerMesh->SetMaterial(0, Material1);
 	}
 
-	if (GameState != nullptr)
+	if (GameState != nullptr && GameMode != nullptr)
 	{
-		// clear timer dari game mode udlu
+		/**		Clear timer from Game Mode*/
+		GetWorldTimerManager().ClearTimer(GameMode->ClockTimer);
+		
 		if (this->isDestroyed && this->TeamName == "Radiant")
 		{
 			GameState->Winner = "Dire Wins";
@@ -139,6 +141,8 @@ void ADestructibleTower::BeginPlay()
 	W_DisplayHealth = Cast<UUserWidget>(W_Health->GetUserWidgetObject());
 
 	GameState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+
+	GameMode = Cast<ABattleMobaGameMode>(UGameplayStatics::GetGameMode(this));
 
 	if (GameState)
 	{

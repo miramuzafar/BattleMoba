@@ -48,10 +48,11 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Materials)
 		class UMaterialInterface* Material1;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Game State")
+	UPROPERTY(BlueprintReadOnly, Category = UI)
 		class ABattleMobaGameState* GameState;
 
-
+	UPROPERTY(BlueprintReadOnly, Category = UI)
+		class ABattleMobaGameMode* GameMode;
 
 
 	UFUNCTION(BlueprintCallable)

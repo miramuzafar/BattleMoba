@@ -34,8 +34,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Clock")
 		float EndTime = 900.0f;
 
-	UPROPERTY()
-		FTimerHandle ClockTimer;
+	
 
 protected:
 
@@ -48,6 +47,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ActorSpawning")
 	TArray<class ABattleMobaPC*> Players;
+
+	UPROPERTY()
+		FTimerHandle ClockTimer;
 
 public:
 	ABattleMobaGameMode();
