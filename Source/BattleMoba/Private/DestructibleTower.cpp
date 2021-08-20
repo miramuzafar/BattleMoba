@@ -10,7 +10,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
-
+#include "BattleMobaGameState.h"
+#include "BattleMobaGameMode.h"
 
 void ADestructibleTower::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -86,6 +87,24 @@ void ADestructibleTower::OnRep_Destroy()
 	{
 		TowerMesh->SetMaterial(0, Material1);
 	}
+
+	if (GameState != nullptr && GameMode != nullptr)
+	{
+		/**		Clear timer from Game Mode*/
+		GetWorldTimerManager().ClearTimer(GameMode->ClockTimer);
+		
+		if (this->isDestroyed && this->TeamName == "Radiant")
+		{
+			GameState->Winner = "Dire Wins";
+		}
+
+		else if (this->isDestroyed && this->TeamName == "Dire")
+		{
+			GameState->Winner = "Radiant Wins";
+		}
+		
+	}
+	
 	
 	//if (DynamicMaterial)
 	//{
@@ -120,6 +139,15 @@ void ADestructibleTower::BeginPlay()
 	CurrentHealth = MaxHealth;
 
 	W_DisplayHealth = Cast<UUserWidget>(W_Health->GetUserWidgetObject());
+
+	GameState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+
+	GameMode = Cast<ABattleMobaGameMode>(UGameplayStatics::GetGameMode(this));
+
+	if (GameState)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("GameState is %s"), *GameState->GetName()));
+	}
 	
 	/*auto Material = TowerMesh->GetMaterial(0);
 	DynamicMaterial = UMaterialInstanceDynamic::Create(Material, NULL);

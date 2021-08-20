@@ -33,27 +33,31 @@ void ABattleMobaGameMode::BeginPlay()
 
 void ABattleMobaGameMode::StartClock()
 {
-	if (CurrentTime < EndTime)
+	if (GState != nullptr)
 	{
-		//Get current timer value
-		CurrentTime = GState->GetServerWorldTimeSeconds() - InitialTimer;
-		GState->CurrentTime = CurrentTime;
-	}
-	else
-	{
-		//Stops the timer and check for winners
-		GetWorldTimerManager().ClearTimer(ClockTimer);
-		if (GState->TeamKillA > GState->TeamKillB)
+		if (CurrentTime < EndTime)
 		{
-			GState->Winner = "Radiant Wins";
-		}
-		else if (GState->TeamKillB > GState->TeamKillA)
-		{
-			GState->Winner = "Dire Wins";
+			//Get current timer value
+			CurrentTime = GState->GetServerWorldTimeSeconds() - InitialTimer;
+			GState->CurrentTime = CurrentTime;
 		}
 		else
-			GState->Winner = "Draw";
+		{
+			//Stops the timer and check for winners
+			GetWorldTimerManager().ClearTimer(ClockTimer);
+			if (GState->TeamKillA > GState->TeamKillB)
+			{
+				GState->Winner = "Radiant Wins";
+			}
+			else if (GState->TeamKillB > GState->TeamKillA)
+			{
+				GState->Winner = "Dire Wins";
+			}
+			else
+				GState->Winner = "Draw";
+		}
 	}
+	
 }
 
 ABattleMobaGameMode::ABattleMobaGameMode()
