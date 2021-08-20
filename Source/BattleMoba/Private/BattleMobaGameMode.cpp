@@ -12,6 +12,7 @@
 #include "BattleMobaCharacter.h"
 #include "BattleMobaPlayerState.h"
 #include "BattleMobaGameState.h"
+#include "BattleMobaPC.h"
 
 void ABattleMobaGameMode::BeginPlay()
 {

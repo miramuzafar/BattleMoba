@@ -273,6 +273,18 @@ void ABattleMobaCharacter::RotateToCameraView_Implementation(float DeltaSeconds)
 	this->FollowCamera->GetCameraView(DeltaSeconds, DesiredView);
 
 	this->GetCapsuleComponent()->SetWorldRotation(FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, DesiredView.Rotation.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll));
+
+	//setting up for cooldown properties
+	FTimerHandle handle;
+	FTimerDelegate TimerDelegate;
+
+	//set the row boolean to false after finish cooldown timer
+	TimerDelegate.BindLambda([this]()
+	{
+		Rotate = false;
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+	});
+	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.02f, false);
 }
 
 void ABattleMobaCharacter::SetupWidget()
@@ -657,6 +669,10 @@ void ABattleMobaCharacter::EnableMovementMode()
 	{
 		this->AnimInsta->CanMove = true;
 	}
+	if (Rotate == true)
+	{
+		Rotate = false;
+	}
 }
 
 bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection)
@@ -741,10 +757,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 	else
 	{
-		if (Rotate == true)
-		{
-			Rotate = false;
-		}
+		Rotate = false;
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("STATEMENT ELSE")));
 	}
 
