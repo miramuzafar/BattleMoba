@@ -12,6 +12,7 @@
 #include "Materials/MaterialInterface.h"
 #include "BattleMobaGameState.h"
 #include "BattleMobaGameMode.h"
+#include "BattleMobaPlayerState.h"
 
 void ADestructibleTower::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -102,7 +103,6 @@ void ADestructibleTower::OnRep_Destroy()
 		{
 			GameState->Winner = "Radiant Wins";
 		}
-		
 	}
 	
 	
