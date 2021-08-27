@@ -49,6 +49,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, TargetHead);
 	DOREPLIFETIME(ABattleMobaCharacter, DamageDealers);
 	DOREPLIFETIME(ABattleMobaCharacter, Rotate);
+	DOREPLIFETIME(ABattleMobaCharacter, AttackerLocation);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -381,7 +382,7 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 	{
 		if (this->InRagdoll == false)
 		{
-			if (this->Health >= DamageReceived)
+			if (this->Health >= 0)
 			{
 				float Temp = this->Health - DamageReceived;
 
