@@ -1,0 +1,111 @@
+{
+    "format": {
+        "version": "1.0"
+    },
+    "shaders": {
+        "Main shader": {
+            "displacementTessellation": {
+                "displacement": {
+                    "scale": 0,
+                    "source_channel": 0
+                },
+                "enable": true,
+                "tessellation": {
+                    "max_length": 64,
+                    "subdiv_count": 1,
+                    "subdiv_mode": 0
+                }
+            },
+            "parameters": {
+                "Common Parameters": {
+                    "alpha_dither": false,
+                    "alpha_threshold": 0.33000001311302185,
+                    "ao_intensity": 0.75,
+                    "emissive_intensity": 1,
+                    "horizonFade": 1.2999999523162842,
+                    "nbSamples": 16
+                },
+                "Parallax Occlusion Mapping": {
+                    "maxPOMSamples": 16,
+                    "minPOMSamples": 4,
+                    "pomStrength": 1,
+                    "usePOM": false
+                },
+                "Subsurface Scattering Parameters": {
+                    "sssColor": [
+                        0.7009999752044678,
+                        0.3009999990463257,
+                        0.3050000071525574
+                    ],
+                    "sssEnabled": true,
+                    "sssScale": 0.5,
+                    "sssType": 1
+                }
+            },
+            "shader": "pbr-metal-rough-with-alpha-test",
+            "shaderInstance": "Main shader"
+        }
+    },
+    "texturesets": {
+        "Banku_SD": {
+            "shader": "Main shader"
+        },
+        "Banting_SD": {
+            "shader": "Main shader"
+        },
+        "Dumbbell_SD": {
+            "shader": "Main shader"
+        },
+        "Fighting_Ring_SD": {
+            "shader": "Main shader"
+        },
+        "Iron_Kettlebell_SD": {
+            "shader": "Main shader"
+        },
+        "Kontena_1_SD": {
+            "shader": "Main shader"
+        },
+        "Kontena_2_SD": {
+            "shader": "Main shader"
+        },
+        "Kontena_3_SD": {
+            "shader": "Main shader"
+        },
+        "MFC_Back_Drop_Bg_SD": {
+            "shader": "Main shader"
+        },
+        "MFC_Floor_SD": {
+            "shader": "Main shader"
+        },
+        "MFC_Warehouse_Ceiling_SD": {
+            "shader": "Main shader"
+        },
+        "Oil_Tank_SD": {
+            "shader": "Main shader"
+        },
+        "Peck_Deck_Machine_SD": {
+            "shader": "Main shader"
+        },
+        "Stairs_Steel_SD": {
+            "shader": "Main shader"
+        },
+        "Table_SD": {
+            "shader": "Main shader"
+        },
+        "Traffic_Cone_SD": {
+            "shader": "Main shader"
+        },
+        "Treadmill_SD": {
+            "shader": "Main shader"
+        },
+        "Weight_Station_Bench_SD": {
+            "shader": "Main shader"
+        },
+        "Wood_Box_SD": {
+            "shader": "Main shader"
+        },
+        "Wood_Part_SD": {
+            "shader": "Main shader"
+        }
+    }
+}
