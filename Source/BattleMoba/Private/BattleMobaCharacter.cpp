@@ -57,6 +57,10 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
+	// Create Sphere Component
+	ViewDistanceCol = CreateDefaultSubobject<USphereComponent>(TEXT("ViewDistCol"));
+	ViewDistanceCol->SetupAttachment(RootComponent);
+
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
