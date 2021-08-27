@@ -81,6 +81,10 @@ public:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Team, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
 		FName TeamName;
 
+	//Setting up character mesh for player
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
+		USkeletalMesh* CharMesh;
+
 	UFUNCTION()
 		void OnRep_Team();
 
