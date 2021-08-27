@@ -74,3 +74,4 @@ Plugins/*/Intermediate/*
 DerivedDataCache/*
 Content/ThirdPersonCPP/Blueprints/ThirdPersonCharacter.uasset
 BattleMoba.uproject
+*.uproject
