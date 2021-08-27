@@ -259,6 +259,16 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 			{
 				RotateToCameraView(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
 				this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
+				
+				//Set rotate to false
+				FTimerHandle handle;
+				FTimerDelegate TimerDelegate;
+				TimerDelegate.BindLambda([this]()
+				{
+					Rotate = false;
+					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+				});
+				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.5f, false);
 				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
 			}
 		}
@@ -268,7 +278,16 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 			{
 				ServerRotateToCameraView(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
 				this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
-
+				
+				//Set rotate to false
+				FTimerHandle handle;
+				FTimerDelegate TimerDelegate;
+				TimerDelegate.BindLambda([this]()
+				{
+					Rotate = false;
+					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+				});
+				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.5f, false);
 				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
 			}
 		}
