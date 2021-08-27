@@ -16,3 +16,13 @@ void ABattleMobaGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaGameState, CurrentTime);
 	DOREPLIFETIME(ABattleMobaGameState, Winner);
 }
+
+//void ABattleMobaGameState::OnRep_TeamKillCountA()
+//{
+//
+//}
+//
+//void ABattleMobaGameState::OnRep_TeamKillCountB()
+//{
+//
+//}

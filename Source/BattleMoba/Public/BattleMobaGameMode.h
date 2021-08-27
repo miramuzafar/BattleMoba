@@ -9,11 +9,16 @@
 
 class ABattleMobaCharacter;
 class ABattleMobaGameState;
+class ABattleMobaPlayerState;
+class ABattleMobaPC;
 
 UCLASS(minimalapi)
 class ABattleMobaGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
+
+	//Replicated Network setup
+		void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
 
@@ -26,13 +31,13 @@ protected:
 
 	//************************Clock***********************//
 	UPROPERTY(BlueprintReadWrite, Category = "Clock")
-		float InitialTimer = 0.0f;
-
-	UPROPERTY(BlueprintReadWrite, Category = "Clock")
 		float CurrentTime = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Clock")
 		float EndTime = 900.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map")
+		FString MapName;
 
 	
 
@@ -40,24 +45,38 @@ protected:
 
 	virtual void BeginPlay() override;
 
-	UFUNCTION()
-		void StartClock();
+	void StartClock();
+
+	UFUNCTION(Category = "Spawn")
+		void SpawnBasedOnTeam(FName TeamName);
+
 
 public:
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ActorSpawning")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Clock")
+		float InitialTimer = 0.0f;
+
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "ActorSpawning")
 	TArray<class ABattleMobaPC*> Players;
 
 	UPROPERTY()
 		FTimerHandle ClockTimer;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "NewPlayer")
+		APlayerController* newPlayer;
+
 public:
 	ABattleMobaGameMode();
 
-	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+
+	/*virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;*/
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Respawn")
 	void RespawnRequested(APlayerController* playerController, FTransform SpawnTransform);
+
+	UFUNCTION(BlueprintCallable, Category = "Score")
+		void PlayerKilled(ABattleMobaPlayerState* victim, ABattleMobaPlayerState* killer, TArray<ABattleMobaPlayerState*> assist);
 };
 
 

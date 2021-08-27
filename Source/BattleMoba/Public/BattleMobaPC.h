@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Net/UnrealNetwork.h"
 #include "BattleMobaPC.generated.h"
 
 /**
@@ -14,12 +15,15 @@ class BATTLEMOBA_API ABattleMobaPC : public APlayerController
 {
 	GENERATED_BODY()
 
+	//Replicated Network setup
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 public:
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ID")
+		int32 pi;
 
 	//RequestRespawn
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Respawn")
 	void RespawnPawn(FTransform SpawnTransform);
-	
-	/*UFUNCTION(Reliable, Server, WithValidation, Category = "Spectating")
-	void SpectatingAlly();*/
 };

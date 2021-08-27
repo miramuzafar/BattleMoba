@@ -21,6 +21,9 @@ class ABattleMobaCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class USpringArmComponent* CameraBoom;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UArrowComponent* BaseArrow;
+
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* FollowCamera;
@@ -81,7 +84,10 @@ public:
 
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
-		TArray<ABattleMobaCharacter*> DamageDealers;
+		TArray<class ABattleMobaPlayerState*> DamageDealers;
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
+		void UpdateHUD();
 
 protected:
 
@@ -209,10 +215,10 @@ protected:
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Transformation")
-	void ServerRotateToCameraView(float DeltaSeconds);
+	void ServerRotateToCameraView(FRotator InRot);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "Transformation")
-	void RotateToCameraView(float DeltaSeconds);
+	void RotateToCameraView(FRotator InRot);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Damage")
 	void Setup3DWidgetVisibility();
@@ -268,7 +274,8 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		void EnableMovementMode();
 
-
+	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, WithValidation)
+		void SetupStats();
 
 public:
 	/** Returns CameraBoom subobject **/

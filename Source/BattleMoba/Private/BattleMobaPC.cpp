@@ -4,11 +4,20 @@
 #include "BattleMobaPC.h"
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 //BattleMoba
 #include "BattleMobaGameMode.h"
 #include "BattleMobaPlayerState.h"
 #include "BattleMobaGameState.h"
+
+void ABattleMobaPC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ABattleMobaPC, pi);
+}
+
 
 bool ABattleMobaPC::RespawnPawn_Validate(FTransform SpawnTransform)
 {

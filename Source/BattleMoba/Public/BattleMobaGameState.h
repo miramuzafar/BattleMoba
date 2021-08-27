@@ -27,11 +27,15 @@ public:
 		TArray <FString> TeamB;
 
 	//KDA setup
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, Replicated/*Using = OnRep_TeamKillCountA*/, BlueprintReadWrite)
 		int TeamKillA = 0;
+	/*UFUNCTION()
+	void OnRep_TeamKillCountA();*/
 
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, Replicated/*Using = OnRep_TeamKillCountB*/, BlueprintReadWrite)
 		int TeamKillB = 0;
+	/*UFUNCTION()
+	void OnRep_TeamKillCountB();*/
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 		float Timer = 0.0f;

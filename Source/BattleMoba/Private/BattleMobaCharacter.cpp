@@ -8,6 +8,7 @@
 #include "Components/WidgetComponent.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/CameraComponent.h"
@@ -29,6 +30,8 @@
 #include "DestructibleTower.h"
 #include "BattleMobaGameState.h"
 #include "BattleMobaPlayerState.h"
+#include "BattleMobaGameMode.h"
+
 
 void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -78,6 +81,10 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
+	BaseArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("BaseArrow"));
+	BaseArrow->SetupAttachment(RootComponent);
+	BaseArrow->SetRelativeLocation(FVector(0.00f, 0.000000f, 0.000000f));
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
@@ -155,14 +162,17 @@ void ABattleMobaCharacter::OnRep_Health()
 		const FName hptext = FName(TEXT("HealthText"));
 		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
 
+		const FName hpbar = FName(TEXT("HPBar"));
+		UProgressBar* HealthBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
+
 		if (HealthText)
 		{
 			FString TheFloatStr = FString::SanitizeFloat(this->Health);
 
 			HealthText->SetText(FText::FromString(TheFloatStr));
+			HealthBar->SetPercent(FMath::Clamp(this->Health / 100.0f, 0.0f, 1.0f));
 		}
 	}
-
 	//this->Health = UGestureInputsFunctions::UpdateProgressBarComponent(this->WidgetHUD, "HPBar", "Health", "HP", "Pain Meter", this->Health, this->MaxHealth);
 
 	/*if (this->IsLocallyControlled())
@@ -218,6 +228,24 @@ void ABattleMobaCharacter::BeginPlay()
 	}
 }
 
+float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (this->GetLocalRole() == ROLE_Authority)
+	{
+		if (DamageCauser != this)
+		{
+			ABattleMobaCharacter* damageChar = Cast<ABattleMobaCharacter>(DamageCauser);
+			ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(damageChar->GetPlayerState());
+			if (this->DamageDealers.Contains(ps))
+			{
+				this->DamageDealers.RemoveSingle(ps);
+			}
+			this->DamageDealers.Emplace(ps);
+			HitReactionClient(this, Damage, EnemyHitReactionMoveset);
+		}
+	}
+	return 0.0f;
+}
 
 void ABattleMobaCharacter::Tick(float DeltaTime)
 {
@@ -225,55 +253,46 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 
 	if (Rotate == true)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
-		if (this->IsLocallyControlled())
+		if (HasAuthority())
 		{
-			ServerRotateToCameraView(DeltaTime);
-		}
-	}
-}
-
-float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-	if (this->GetLocalRole() == ROLE_Authority)
-	{
-		if (DamageCauser != this)
-		{
-			HitReactionClient(this, Damage, EnemyHitReactionMoveset);
-
-			ABattleMobaCharacter* damageChar = Cast<ABattleMobaCharacter>(DamageCauser);
-			if (this->DamageDealers.Contains(damageChar))
+			if (this->IsLocallyControlled())
 			{
-				this->DamageDealers.RemoveSingle(damageChar);
+				RotateToCameraView(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
+				this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
+				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
 			}
-			this->DamageDealers.Emplace(damageChar);
+		}
+		else
+		{
+			if (this->GetController() != nullptr)
+			{
+				ServerRotateToCameraView(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
+				this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
+
+				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+			}
 		}
 	}
-	return 0.0f;
 }
 
-bool ABattleMobaCharacter::ServerRotateToCameraView_Validate(float DeltaSeconds)
+bool ABattleMobaCharacter::ServerRotateToCameraView_Validate(FRotator InRot)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ServerRotateToCameraView_Implementation(float DeltaSeconds)
+void ABattleMobaCharacter::ServerRotateToCameraView_Implementation(FRotator InRot)
 {
-	RotateToCameraView(DeltaSeconds);
+	RotateToCameraView(InRot);
 }
 
-bool ABattleMobaCharacter::RotateToCameraView_Validate(float DeltaSeconds)
+bool ABattleMobaCharacter::RotateToCameraView_Validate(FRotator InRot)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::RotateToCameraView_Implementation(float DeltaSeconds)
+void ABattleMobaCharacter::RotateToCameraView_Implementation(FRotator InRot)
 {
-	FMinimalViewInfo DesiredView;
-	this->FollowCamera->GetCameraView(DeltaSeconds, DesiredView);
-
-	this->GetCapsuleComponent()->SetWorldRotation(FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, DesiredView.Rotation.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll));
-
+	this->SetActorRotation(InRot);
 	//setting up for cooldown properties
 	FTimerHandle handle;
 	FTimerDelegate TimerDelegate;
@@ -282,18 +301,18 @@ void ABattleMobaCharacter::RotateToCameraView_Implementation(float DeltaSeconds)
 	TimerDelegate.BindLambda([this]()
 	{
 		Rotate = false;
-		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
 	});
-	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.02f, false);
+	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.5f, false);
 }
 
 void ABattleMobaCharacter::SetupWidget()
 {
-	OnRep_Team();
-
+	//OnRep_Team();
+	SetupStats();
 	SpawnTransform = this->GetActorTransform();
 
-	UUserWidget* HPWidget = Cast<UUserWidget>(W_DamageOutput->GetUserWidgetObject());
+	/*UUserWidget* HPWidget = Cast<UUserWidget>(W_DamageOutput->GetUserWidgetObject());
 	if (HPWidget)
 	{
 		const FName hptext = FName(TEXT("HealthText"));
@@ -311,7 +330,7 @@ void ABattleMobaCharacter::SetupWidget()
 			else
 				HealthText->SetColorAndOpacity(FLinearColor(1.0, 0.0, 0.0, 1.0));
 		}
-	}
+	}*/
 
 	//Setup3DWidgetVisibility();
 }
@@ -350,47 +369,65 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 				/**		Knockout and respawn*/
 				if (Temp <= 0.0f)
 				{
+					//Set Team Kills
+					//ABattleMobaGameState* gs = Cast <ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+					//if (gs)
+					//{
+					//	if (gs->TeamA.Contains(this->GetPlayerState()->GetPlayerName()))
+					//	{
+					//		gs->TeamKillB += 1;
+					//		//gs->OnRep_TeamKillCountB();
+					//	}
+					//	else if (gs->TeamB.Contains(this->GetPlayerState()->GetPlayerName()))
+					//	{
+					//		gs->TeamKillA += 1;
+					//		//gs->OnRep_TeamKillCountA();
+					//	}
+					//	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Team A : %d, Team B : %d"), gs->TeamKillA, gs->TeamKillB));
+					//}
 					Temp = 0.0f;
 
-					//Set player's death count
-					ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
-					if (ps)
+					//ps->Death += 1;
+
+					FTimerHandle handle;
+					FTimerDelegate TimerDelegate;
+
+					//set the row boolean to false after finish cooldown timer
+					TimerDelegate.BindLambda([this]()
 					{
-						ps->Death += 1;
-
-						FTimerHandle handle;
-						FTimerDelegate TimerDelegate;
-
-						//set the row boolean to false after finish cooldown timer
-						TimerDelegate.BindLambda([this]()
+						//Set player's death count
+						ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
+						ABattleMobaGameMode* gm = Cast<ABattleMobaGameMode>(UGameplayStatics::GetGameMode(this));
+						if (gm)
 						{
-							for (int32 i = 0; i < this->DamageDealers.Num(); i++)
-							{
-								if (this->DamageDealers[i] == this->DamageDealers.Last())
-								{
-									//Set killer Kill count
-									ABattleMobaPlayerState* pDealer = Cast<ABattleMobaPlayerState>(this->DamageDealers.Last()->GetPlayerState());
-									if (pDealer)
-									{
-										pDealer->Kill += 1;
-									}
-								}
-								else
-								{
-									//Set assist count
-									ABattleMobaPlayerState* pDealer = Cast<ABattleMobaPlayerState>(this->DamageDealers[i]->GetPlayerState());
-									if (pDealer)
-									{
-										pDealer->Assist += 1;
-									}
-								}
-							}
-						});
+							gm->PlayerKilled(ps, this->DamageDealers.Last(), DamageDealers);
+						}
+						//for (int32 i = 0; i < this->DamageDealers.Num(); i++)
+						//{
+						//	if (this->DamageDealers[i] == this->DamageDealers.Last())
+						//	{
+						//		//Set killer Kill count
+						//		ABattleMobaPlayerState* pDealer = Cast<ABattleMobaPlayerState>(this->DamageDealers.Last()->GetPlayerState());
+						//		if (pDealer)
+						//		{
+						//			pDealer->Kill += 1;
+						//		}
+						//	}
+						//	else
+						//	{
+						//		//Set assist count
+						//		ABattleMobaPlayerState* pDealer = Cast<ABattleMobaPlayerState>(this->DamageDealers[i]->GetPlayerState());
+						//		if (pDealer)
+						//		{
+						//			pDealer->Assist += 1;
+						//		}
+						//	}
+						//}
+					});
 
-						//start cooldown the skill
-						this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.02f, false);
-					}
-
+					//start cooldown the skill
+					this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.02f, false);
+					
 					this->GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 					this->GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_PhysicsBody);
 					this->GetMesh()->SetSimulatePhysics(true);
@@ -400,20 +437,6 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					if (GetLocalRole() == ROLE_Authority)
 					{
 						this->GetWorld()->GetTimerManager().SetTimer(this->RespawnTimer, this, &ABattleMobaCharacter::RespawnCharacter, 3.0f, false);
-
-						//Set Team Kills
-						ABattleMobaGameState* gs = Cast <ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
-						if (gs)
-						{
-							if (gs->TeamA.Contains(this->GetPlayerState()->GetPlayerName()))
-							{
-								gs->TeamKillB += 1;
-							}
-							else if (gs->TeamB.Contains(this->GetPlayerState()->GetPlayerName()))
-							{
-								gs->TeamKillA += 1;
-							}
-						}
 					}
 				}
 				this->Health = Temp;
@@ -438,6 +461,7 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 			}
 		}
 	}
+	UpdateHUD();
 }
 
 void ABattleMobaCharacter::ClearDamageDealers()
@@ -637,7 +661,6 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 		{
 			bAttacking = false;
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT(" bCombo Attack resets to false")));
-			
 		});
 
 		/**		Reset boolean after section ends*/
@@ -655,7 +678,6 @@ void ABattleMobaCharacter::RespawnCharacter_Implementation()
 	ABattleMobaPC* PC = Cast<ABattleMobaPC>(UGameplayStatics::GetPlayerController(this, 0));
 	if (PC)
 	{
-		
 		PC->RespawnPawn(SpawnTransform);
 		PC->UnPossess();
 	}
@@ -669,9 +691,32 @@ void ABattleMobaCharacter::EnableMovementMode()
 	{
 		this->AnimInsta->CanMove = true;
 	}
-	if (Rotate == true)
+}
+
+bool ABattleMobaCharacter::SetupStats_Validate()
+{
+	return true;
+}
+
+void ABattleMobaCharacter::SetupStats_Implementation()
+{
+	UUserWidget* HPWidget = Cast<UUserWidget>(W_DamageOutput->GetUserWidgetObject());
+	if (HPWidget)
 	{
-		Rotate = false;
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Player %s with %s Widget"), *GetDebugName(this), *HPWidget->GetFName().ToString()));
+		const FName hptext = FName(TEXT("HealthText"));
+		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
+
+		const FName hpbar = FName(TEXT("HPBar"));
+		UProgressBar* HealthBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
+
+		if (HealthText)
+		{
+			FString TheFloatStr = FString::SanitizeFloat(this->Health);
+
+			HealthText->SetText(FText::FromString(TheFloatStr));
+			HealthBar->SetPercent(FMath::Clamp(this->Health / 100.0f, 0.0f, 1.0f));
+		}
 	}
 }
 
@@ -732,10 +777,10 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 			FVector dashVector = FVector(this->GetCapsuleComponent()->GetForwardVector().X*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Y*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Z);
 
-			this->LaunchCharacter(dashVector, false, false);
+			this->LaunchCharacter(dashVector, true, true);
 		});
 		//start cooldown the skill
-		this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, montageTimer / 2.0f, false);
+		this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.218f, false);
 
 		/**		Enable movement back after montage finished playing*/
 		this->GetWorld()->GetTimerManager().SetTimer(Delay, this, &ABattleMobaCharacter::EnableMovementMode, montageTimer, false);
@@ -752,7 +797,6 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current Section is %s"), *MontageSection.ToString()));
 		PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
 		SelectedRow.SkillMoveset->GetSectionLength(AttackSectionUUID);
-
 	}
 
 	else
@@ -821,15 +865,15 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 
 	FVector Start;
 	FVector End;
-
+	
 	if (Head == true)
 	{
-		Start = FVector(this->GetArrowComponent()->GetComponentLocation().X, this->GetArrowComponent()->GetComponentLocation().Y, this->GetArrowComponent()->GetComponentLocation().Z + 50.0f);
+		Start = FVector(this->BaseArrow->GetComponentLocation().X, this->BaseArrow->GetComponentLocation().Y, this->BaseArrow->GetComponentLocation().Z + 50.0f);
 		End = this->GetCapsuleComponent()->GetForwardVector()*TraceDistance + Start;
 	}
 	else
 	{
-		Start = FVector(this->GetArrowComponent()->GetComponentLocation().X, this->GetArrowComponent()->GetComponentLocation().Y, this->GetArrowComponent()->GetComponentLocation().Z);
+		Start = FVector(this->BaseArrow->GetComponentLocation().X, this->BaseArrow->GetComponentLocation().Y, this->BaseArrow->GetComponentLocation().Z);
 		End = this->GetCapsuleComponent()->GetForwardVector()*TraceDistance + Start;
 	}
 

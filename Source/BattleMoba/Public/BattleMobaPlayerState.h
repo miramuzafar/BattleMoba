@@ -17,10 +17,10 @@ class BATTLEMOBA_API ABattleMobaPlayerState : public APlayerState
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 	
 public:
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 	FName TeamName;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 	int32 Pi = 0;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
@@ -31,4 +31,8 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 	int Assist = 0;
+
+public:
+	UFUNCTION(Reliable, Client, WithValidation, Category = "PI")
+		void SetPlayerIndex(int32 PlayerIndex);
 };
