@@ -32,6 +32,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 	int Assist = 0;
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+	class USkeletalMesh* CharMesh;
+
 public:
 	UFUNCTION(Reliable, Client, WithValidation, Category = "PI")
 		void SetPlayerIndex(int32 PlayerIndex);

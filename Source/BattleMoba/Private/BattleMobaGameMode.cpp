@@ -6,7 +6,9 @@
 #include "UObject/ConstructorHelpers.h"
 #include "GameFramework/PlayerStart.h"
 #include "Net/UnrealNetwork.h"
+#include "Math/UnrealMathUtility.h"
 #include "TimerManager.h"
+#include "Kismet/KismetArrayLibrary.h"
 
 //BattleMoba
 #include "BattleMobaCharacter.h"
@@ -31,11 +33,14 @@ void ABattleMobaGameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ABattleMobaGameMode, Players);
+	DOREPLIFETIME(ABattleMobaGameMode, CharIndex);
 }
 
 void ABattleMobaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+
+	Chars = CharSelections;
 	
 	//sETTING UP GAME STATE
 	GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
@@ -90,6 +95,10 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 					PS->Pi = Players.Num() - 1;
 					PS->SetPlayerIndex(PS->Pi);
 					
+					//Random unique number for character mesh array
+					CharIndex = FMath::RandRange(0, Chars.Num() - 1);
+					PS->CharMesh = Chars[CharIndex];
+					Chars.RemoveAtSwap(CharIndex);
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
 
 					if ((Players.Num() - 1) < 3)
@@ -157,6 +166,7 @@ void ABattleMobaGameMode::SpawnBasedOnTeam/*_Implementation*/(FName TeamName)
 		{
 			pawn->PlayerName = PS->GetPlayerName();
 			pawn->TeamName = PS->TeamName;
+			pawn->CharMesh = PS->CharMesh;
 			UGameplayStatics::FinishSpawningActor(pawn, FTransform(PStart->GetActorRotation(), PStart->GetActorLocation()));
 
 			newPlayer->Possess(pawn);
@@ -229,6 +239,7 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 						//Assign team and player name before finish spawning
 						pawn->PlayerName = playerController->PlayerState->GetPlayerName();
 						pawn->TeamName = PS->TeamName;
+						pawn->CharMesh = PS->CharMesh;
 					}
 					UGameplayStatics::FinishSpawningActor(pawn, FTransform(SpawnTransform.Rotator(), SpawnTransform.GetLocation()));
 				}

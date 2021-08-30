@@ -50,6 +50,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, DamageDealers);
 	DOREPLIFETIME(ABattleMobaCharacter, Rotate);
 	DOREPLIFETIME(ABattleMobaCharacter, AttackerLocation);
+	DOREPLIFETIME(ABattleMobaCharacter, CharMesh);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -220,6 +221,8 @@ void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
+
+	GetMesh()->SetSkeletalMesh(CharMesh, false);
 
 	FString Context;
 	for (auto& name : ActionTable->GetRowNames())

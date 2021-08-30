@@ -11,6 +11,7 @@ class ABattleMobaCharacter;
 class ABattleMobaGameState;
 class ABattleMobaPlayerState;
 class ABattleMobaPC;
+class USkeletalMesh;
 
 UCLASS(minimalapi)
 class ABattleMobaGameMode : public AGameModeBase
@@ -21,6 +22,8 @@ class ABattleMobaGameMode : public AGameModeBase
 		void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
+
+	TArray<USkeletalMesh*> Chars;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Game State")
 		ABattleMobaGameState* GState;
@@ -39,7 +42,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map")
 		FString MapName;
 
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character")
+		TArray<USkeletalMesh*> CharSelections;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Character")
+		int32 CharIndex = 0;
 
 protected:
 
