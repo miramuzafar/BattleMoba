@@ -224,10 +224,17 @@ void ABattleMobaCharacter::BeginPlay()
 
 	this->GetMesh()->SetSkeletalMesh(CharMesh, false);
 	this->GetMesh()->SetVisibility(true);
+	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
-	if (this->GetMesh()->IsVisible() && this->GetMesh() != nullptr)
+	/*if (this->GetMesh()->IsVisible())
 	{
 		AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
+	}*/
+
+	FString Context;
+	for (auto& name : ActionTable->GetRowNames())
+	{
+		FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
 
 		FString Context;
 		for (auto& name : ActionTable->GetRowNames())
@@ -509,7 +516,7 @@ void ABattleMobaCharacter::ClearDamageDealers()
 
 void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 {
-	if (this->GetMesh()->IsVisible() && this->GetMesh() != nullptr)
+	if (this->GetMesh() != nullptr)
 	{
 		//Used in error reporting
 		FString Context;
@@ -604,18 +611,24 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 			}
 		}
 	}
+	
 }
 
 void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 {
-	if (this->GetMesh()->IsVisible() && this->GetMesh() != nullptr)
+	//UBattleMobaAnimInstance* AnimInst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
+
+	/**		Continues combo section of the montage*/
+	if (AnimInsta->Montage_IsPlaying(AttackComboMoveset))
 	{
 		UBattleMobaAnimInstance* AnimInst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
 		/**		Continues combo section of the montage*/
 		if (AnimInst->IsAnyMontagePlaying())
 		{
-			if (SelectedRow.Section == 3)
+			/**		Checks whether the current montage section contains "Combo" substring*/
+			FName CurrentSection = AnimInsta->Montage_GetCurrentSection(AnimInsta->GetCurrentActiveMontage());
+			if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("Combo"), false, false))
 			{
 				/**		Checks whether the current montage section contains "Combo" substring*/
 				FName CurrentSection = AnimInst->Montage_GetCurrentSection(AnimInst->GetCurrentActiveMontage());
@@ -657,7 +670,11 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 				}
 			}
 
-			else if (SelectedRow.Section == 2)
+		else if (SelectedRow.Section == 2)
+		{
+			/**		Checks whether the current montage section contains "Combo" substring*/
+			FName CurrentSection = AnimInsta->Montage_GetCurrentSection(AnimInsta->GetCurrentActiveMontage());
+			if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("Combo"), false, false))
 			{
 				/**		Checks whether the current montage section contains "Combo" substring*/
 				FName CurrentSection = AnimInst->Montage_GetCurrentSection(AnimInst->GetCurrentActiveMontage());

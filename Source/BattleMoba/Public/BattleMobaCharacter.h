@@ -137,6 +137,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* HitReactionMoveset;
 
+	UPROPERTY(EditDefaultsOnly)
+		UAnimMontage* AttackComboMoveset;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* EnemyHitReactionMoveset;
 
