@@ -276,8 +276,8 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 					Rotate = false;
 					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
 				});
-				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.5f, false);
-				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
+				//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
 			}
 		}
 		else
@@ -295,8 +295,8 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 					Rotate = false;
 					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
 				});
-				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.5f, false);
-				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
+				//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
 			}
 		}
 	}
@@ -330,7 +330,7 @@ void ABattleMobaCharacter::RotateToCameraView_Implementation(FRotator InRot)
 		Rotate = false;
 		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
 	});
-	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.5f, false);
+	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
 }
 
 void ABattleMobaCharacter::SetupWidget()
@@ -533,6 +533,10 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 							TargetHead = row->TargetIsHead;
 							if (this->IsLocallyControlled())
 							{
+								if (Rotate == false)
+								{
+									Rotate = true;
+								}
 								//play the animation that visible to all clients
 								ServerExecuteAction(*row, AttackSection);
 
@@ -562,6 +566,10 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 					if (this->IsLocallyControlled())
 					{
+						if (Rotate == true)
+						{
+							Rotate = false;
+						}
 						//play the animation that visible to all clients
 						ServerExecuteAction(*row, AttackSection);
 						break;
@@ -573,6 +581,10 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 					if (row->SkillMoveset != nullptr)
 					{
+						if (Rotate == false)
+						{
+							Rotate = true;
+						}
 						TargetHead = row->TargetIsHead;
 						
 						AttackCombo(*row);
@@ -769,10 +781,6 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 		//if current montage consumes cooldown properties
 		if (SelectedRow.IsUsingCD)
 		{
-			if (Rotate == false)
-			{
-				Rotate = true;
-			}
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
 			float montageDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
@@ -785,10 +793,10 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 	//if current montage will affects player location
 	else if (SelectedRow.UseTranslate)
 	{
-		if (Rotate == true)
+		/*if (Rotate == true)
 		{
 			Rotate = false;
-		}
+		}*/
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 
 		float montageTimer = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
@@ -815,10 +823,6 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 	else if (SelectedRow.UseSection)
 	{
-		if (Rotate == false)
-		{
-			Rotate = true;
-		}
 		/** Play Attack Montage by Section */
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current Section is %s"), *MontageSection.ToString()));

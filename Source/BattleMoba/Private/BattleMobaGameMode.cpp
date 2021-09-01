@@ -170,13 +170,13 @@ void ABattleMobaGameMode::SpawnBasedOnTeam/*_Implementation*/(FName TeamName)
 		}*/
 		AActor* PStart = FindPlayerStart(newPlayer, FString::FromInt(PS->Pi));
 
-		ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, PStart->GetActorTransform());
+		ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, PStart->GetRootComponent()->GetComponentTransform());
 		if (pawn)
 		{
 			pawn->PlayerName = PS->GetPlayerName();
 			pawn->TeamName = PS->TeamName;
 			pawn->CharMesh = PS->CharMesh;
-			UGameplayStatics::FinishSpawningActor(pawn, FTransform(PStart->GetActorRotation(), PStart->GetActorLocation()));
+			UGameplayStatics::FinishSpawningActor(pawn, FTransform(PStart->GetRootComponent()->GetComponentRotation(), PStart->GetRootComponent()->GetComponentLocation()));
 
 			newPlayer->Possess(pawn);
 		}
