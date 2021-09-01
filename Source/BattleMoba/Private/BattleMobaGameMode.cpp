@@ -159,7 +159,7 @@ void ABattleMobaGameMode::SpawnBasedOnTeam/*_Implementation*/(FName TeamName)
 	{
 		PS->TeamName = TeamName;
 
-		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		/*for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
 		{
 			APlayerStart* currentPlayerStart = *It;
 			if (currentPlayerStart->PlayerStartTag == FName(*FString::FromInt(PS->Pi)))
@@ -167,8 +167,8 @@ void ABattleMobaGameMode::SpawnBasedOnTeam/*_Implementation*/(FName TeamName)
 				PStart = currentPlayerStart;
 				break;
 			}
-		}
-		//AActor* PStart = FindPlayerStart(newPlayer, FString::FromInt(PS->Pi));
+		}*/
+		AActor* PStart = FindPlayerStart(newPlayer, FString::FromInt(PS->Pi));
 
 		ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, PStart->GetActorTransform());
 		if (pawn)
