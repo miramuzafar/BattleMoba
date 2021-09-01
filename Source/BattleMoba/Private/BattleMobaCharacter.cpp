@@ -55,6 +55,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 
 ABattleMobaCharacter::ABattleMobaCharacter()
 {
+	this->GetMesh()->SetVisibility(false);
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -220,9 +221,14 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
-	GetMesh()->SetSkeletalMesh(CharMesh, false);
+	this->GetMesh()->SetSkeletalMesh(CharMesh, false);
+	this->GetMesh()->SetVisibility(true);
+
+	if (this->GetMesh()->IsVisible())
+	{
+		AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
+	}
 
 	FString Context;
 	for (auto& name : ActionTable->GetRowNames())

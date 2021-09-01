@@ -95,12 +95,14 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 					PS->Pi = Players.Num() - 1;
 					//PS->SetPlayerIndex(PS->Pi);
 					
-					//Random unique number for character mesh array
-					CharIndex = FMath::RandRange(0, Chars.Num() - 1);
-					PS->CharMesh = Chars[CharIndex];
-					Chars.RemoveAtSwap(CharIndex);
-					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
-
+					if (Chars.IsValidIndex(0))
+					{
+						//Random unique number for character mesh array
+						CharIndex = FMath::RandRange(0, Chars.Num() - 1);
+						PS->CharMesh = Chars[CharIndex];
+						Chars.RemoveAtSwap(CharIndex);
+						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
+					}
 					if ((PS->Pi) < 3)
 					{
 						GState->TeamA.Add(PS->GetPlayerName());
@@ -170,15 +172,16 @@ void ABattleMobaGameMode::SpawnBasedOnTeam/*_Implementation*/(FName TeamName)
 		}*/
 		AActor* PStart = FindPlayerStart(newPlayer, FString::FromInt(PS->Pi));
 
-		ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, PStart->GetRootComponent()->GetComponentTransform());
+		ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, PStart->GetActorTransform());
 		if (pawn)
 		{
 			pawn->PlayerName = PS->GetPlayerName();
 			pawn->TeamName = PS->TeamName;
 			pawn->CharMesh = PS->CharMesh;
-			UGameplayStatics::FinishSpawningActor(pawn, FTransform(PStart->GetRootComponent()->GetComponentRotation(), PStart->GetRootComponent()->GetComponentLocation()));
+			UGameplayStatics::FinishSpawningActor(pawn, FTransform(PStart->GetActorRotation(), PStart->GetActorLocation()));
 
 			newPlayer->Possess(pawn);
+			newPlayer->ClientSetRotation(PStart->GetActorRotation());
 		}
 
 	}
