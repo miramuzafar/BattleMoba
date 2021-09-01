@@ -236,15 +236,9 @@ void ABattleMobaCharacter::BeginPlay()
 	{
 		FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
 
-		FString Context;
-		for (auto& name : ActionTable->GetRowNames())
+		if (row)
 		{
-			FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
-
-			if (row)
-			{
-				row->isOnCD = false;
-			}
+			row->isOnCD = false;
 		}
 	}
 }
