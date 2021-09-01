@@ -510,7 +510,7 @@ void ABattleMobaCharacter::ClearDamageDealers()
 
 void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 {
-	if (this->GetMesh() != nullptr)
+	if (GetMesh()->SkeletalMesh != nullptr)
 	{
 		//Used in error reporting
 		FString Context;
@@ -1090,7 +1090,7 @@ void ABattleMobaCharacter::TowerReceiveDamage_Implementation(ADestructibleTower 
 
 void ABattleMobaCharacter::TurnAtRate(float Rate)
 {
-	if (this->GetMesh()->IsVisible() && this->GetMesh() != nullptr)
+	if (GetMesh()->SkeletalMesh != nullptr)
 	{
 		// calculate delta for this frame from the rate information
 		AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
@@ -1100,7 +1100,7 @@ void ABattleMobaCharacter::TurnAtRate(float Rate)
 
 void ABattleMobaCharacter::LookUpAtRate(float Rate)
 {
-	if (this->GetMesh()->IsVisible() && this->GetMesh() != nullptr)
+	if (GetMesh()->SkeletalMesh != nullptr)
 	{
 		// calculate delta for this frame from the rate information
 		AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
@@ -1109,7 +1109,7 @@ void ABattleMobaCharacter::LookUpAtRate(float Rate)
 
 void ABattleMobaCharacter::MoveForward(float Value)
 {
-	if (this->GetMesh()->IsVisible() && this->GetMesh() != nullptr)
+	if (GetMesh()->SkeletalMesh != nullptr)
 	{
 		if ((Controller != NULL) && (Value != 0.0f))
 		{
@@ -1132,7 +1132,7 @@ void ABattleMobaCharacter::MoveForward(float Value)
 
 void ABattleMobaCharacter::MoveRight(float Value)
 {
-	if (this->GetMesh()->IsVisible() && this->GetMesh() != nullptr)
+	if (GetMesh()->SkeletalMesh != nullptr)
 	{
 		if ((Controller != NULL) && (Value != 0.0f))
 		{
