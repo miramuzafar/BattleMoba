@@ -25,6 +25,8 @@ protected:
 
 	TArray<USkeletalMesh*> Chars;
 
+	//class APlayerStart* PStart;
+
 	UPROPERTY(BlueprintReadWrite, Category = "Game State")
 		ABattleMobaGameState* GState;
 
