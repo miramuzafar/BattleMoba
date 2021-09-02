@@ -73,9 +73,9 @@ void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 		FTimerDelegate TimerDelegate;
 
 		//Possess a pawn
-		TimerDelegate.BindLambda([this, thisGameMode, SpawnTransform]()
+		TimerDelegate.BindLambda([this, thisGameMode, thisstate]()
 		{
-			thisGameMode->RespawnRequested(this, SpawnTransform);
+			thisGameMode->RespawnRequested(this, thisstate->SpawnTransform);
 		});
 		this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 27.0f, false);
 	}

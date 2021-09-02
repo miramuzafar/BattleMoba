@@ -344,7 +344,6 @@ void ABattleMobaCharacter::SetupWidget()
 {
 	//OnRep_Team();
 	SetupStats();
-	SpawnTransform = this->GetActorTransform();
 
 	/*UUserWidget* HPWidget = Cast<UUserWidget>(W_DamageOutput->GetUserWidgetObject());
 	if (HPWidget)
@@ -728,8 +727,12 @@ void ABattleMobaCharacter::RespawnCharacter_Implementation()
 	ABattleMobaPC* PC = Cast<ABattleMobaPC>(UGameplayStatics::GetPlayerController(this, 0));
 	if (PC)
 	{
-		PC->RespawnPawn(SpawnTransform);
-		PC->UnPossess();
+		ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(PC->PlayerState);
+		if (PS)
+		{
+			PC->RespawnPawn(PS->SpawnTransform);
+			PC->UnPossess();
+		}
 	}
 }
 

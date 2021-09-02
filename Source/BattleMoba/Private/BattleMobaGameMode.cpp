@@ -178,6 +178,7 @@ void ABattleMobaGameMode::SpawnBasedOnTeam/*_Implementation*/(FName TeamName)
 			pawn->PlayerName = PS->GetPlayerName();
 			pawn->TeamName = PS->TeamName;
 			pawn->CharMesh = PS->CharMesh;
+			PS->SpawnTransform = PStart->GetActorTransform();
 			UGameplayStatics::FinishSpawningActor(pawn, FTransform(PStart->GetActorRotation(), PStart->GetActorLocation()));
 
 			newPlayer->Possess(pawn);
@@ -218,12 +219,21 @@ void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMo
 	{
 		victim->Death += 1;
 		killer->Kill += 1;
-		if (GState->TeamA.Contains(killer->GetPlayerName()))
+
+		if (killer->TeamName == "Radiant")
+		{
+			GState->TeamKillA += 1;
+		}
+		else if(killer->TeamName == "Dire")
+		{
+			GState->TeamKillB += 1;
+		}
+		/*if (GState->TeamA.Contains(killer->GetPlayerName()))
 		{
 			GState->TeamKillA += 1;
 		}
 		else
-			GState->TeamKillB += 1;
+			GState->TeamKillB += 1;*/
 	}
 }
 
@@ -238,34 +248,35 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 	{
 		if (HasAuthority())
 		{
-			//Spawn actor
-			if (SpawnedActor)
+			ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(playerController->PlayerState);
 			{
-				//Spawn actor from SpawnedActor subclass
-				ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, SpawnTransform);
-				if (pawn)
+				//Spawn actor
+				if (SpawnedActor)
 				{
-					ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(playerController->PlayerState);
-					if (PS)
+					//Spawn actor from SpawnedActor subclass
+					ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, SpawnTransform);
+					if (pawn)
 					{
 						//Assign team and player name before finish spawning
 						pawn->PlayerName = playerController->PlayerState->GetPlayerName();
 						pawn->TeamName = PS->TeamName;
 						pawn->CharMesh = PS->CharMesh;
+
+						UGameplayStatics::FinishSpawningActor(pawn, FTransform(SpawnTransform.Rotator(), SpawnTransform.GetLocation()));
 					}
-					UGameplayStatics::FinishSpawningActor(pawn, FTransform(SpawnTransform.Rotator(), SpawnTransform.GetLocation()));
+
+					FTimerHandle handle;
+					FTimerDelegate TimerDelegate;
+
+					//Possess a pawn
+					TimerDelegate.BindLambda([playerController, pawn]()
+					{
+						UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE POSSESSING A PAWN"));
+						playerController->Possess(pawn);
+						playerController->ClientSetRotation(pawn->GetActorRotation());
+					});
+					this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.2f, false);
 				}
-
-				FTimerHandle handle;
-				FTimerDelegate TimerDelegate;
-
-				//Possess a pawn
-				TimerDelegate.BindLambda([playerController, pawn]()
-				{
-					UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE POSSESSING A PAWN"));
-					playerController->Possess(pawn);
-				});
-				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.2f, false);
 			}
 		}
 	}

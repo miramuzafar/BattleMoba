@@ -35,6 +35,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 	class USkeletalMesh* CharMesh;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
+	FTransform SpawnTransform;
+
 public:
 	UFUNCTION(Reliable, Client, WithValidation, Category = "PI")
 		void SetPlayerIndex(int32 PlayerIndex);

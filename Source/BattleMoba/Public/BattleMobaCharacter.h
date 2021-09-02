@@ -203,9 +203,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
 	FTimerHandle RespawnTimer;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
-	FTransform SpawnTransform;
-	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
 		bool bEnableMove = true;
 
