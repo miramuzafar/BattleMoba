@@ -33,7 +33,8 @@ void ABattleMobaGameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ABattleMobaGameMode, Players);
-	DOREPLIFETIME(ABattleMobaGameMode, CharIndex);
+	//DOREPLIFETIME(ABattleMobaGameMode, CharIndex);
+	//DOREPLIFETIME(ABattleMobaGameMode, CharSelections);
 }
 
 void ABattleMobaGameMode::BeginPlay()
@@ -94,7 +95,7 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 				{
 					PS->Pi = Players.Num() - 1;
 					//PS->SetPlayerIndex(PS->Pi);
-					
+
 					if (Chars.IsValidIndex(0))
 					{
 						//Random unique number for character mesh array
