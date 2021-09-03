@@ -23,8 +23,6 @@ class ABattleMobaGameMode : public AGameModeBase
 
 protected:
 
-	TArray<USkeletalMesh*> Chars;
-
 	//class APlayerStart* PStart;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Game State")
@@ -47,7 +45,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character")
 		TArray<USkeletalMesh*> CharSelections;
 
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Character")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character")
 		int32 CharIndex = 0;
 
 protected:
@@ -55,6 +53,8 @@ protected:
 	virtual void BeginPlay() override;
 
 	void StartClock();
+
+	TArray<USkeletalMesh*> Chars;
 
 	UFUNCTION(Category = "Spawn")
 		void SpawnBasedOnTeam(FName TeamName);
