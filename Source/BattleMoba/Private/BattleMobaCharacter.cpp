@@ -958,6 +958,7 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Is not self")));
 		ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(hit.Actor);
 
+		TracedChar = hitChar;
 		TowerActor = Cast<ADestructibleTower>(hit.Actor);
 
 		if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)

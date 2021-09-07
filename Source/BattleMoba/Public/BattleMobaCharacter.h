@@ -208,6 +208,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Destructible")
 		ADestructibleTower* TowerActor;
 
+	UPROPERTY(VisibleAnywhere, Category = "HitDetection")
+		ABattleMobaCharacter* TracedChar;
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
