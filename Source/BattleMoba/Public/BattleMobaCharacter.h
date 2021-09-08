@@ -9,6 +9,9 @@
 #include "BattleMobaAnimInstance.h"
 #include "BattleMobaCharacter.generated.h"
 
+class ABMobaTriggerCapsule;
+struct FTimerHandle;
+
 UCLASS(config = Game)
 class ABattleMobaCharacter : public ACharacter
 {
@@ -313,12 +316,11 @@ public:
 
 	/*******************SAFEZONE*****************************************/
 
-	UFUNCTION(BlueprintCallable, Category = "SafeZone")
-		void SafeZone(const FString& NewText);
+	void SafeZone(ABMobaTriggerCapsule* TriggerZone, FTimerHandle* FlagTimer);
 
-	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
-		void SafeZoneServer(const FString& NewText);
+	UFUNCTION(Server, Reliable, WithValidation)
+		void SafeZoneServer(ABMobaTriggerCapsule* TriggerZone, FTimerHandle FlagTimer);
 
-	UFUNCTION(BlueprintCallable, NetMulticast, Unreliable, WithValidation)
-		void SafeZoneMulticast(const FString& NewText);
+	UFUNCTION(NetMulticast, Unreliable, WithValidation)
+		void SafeZoneMulticast(ABMobaTriggerCapsule* TriggerZone, FTimerHandle FlagTimer);
 };
