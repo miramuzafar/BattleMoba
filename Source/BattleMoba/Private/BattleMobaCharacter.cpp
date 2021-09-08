@@ -772,6 +772,34 @@ void ABattleMobaCharacter::EnableMovementMode()
 	}
 }
 
+void ABattleMobaCharacter::SafeZone(const FString& NewText)
+{
+	if (IsLocallyControlled())
+	{
+		SafeZoneServer(NewText);
+	}
+}
+
+bool ABattleMobaCharacter::SafeZoneServer_Validate(const FString& NewText)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::SafeZoneServer_Implementation(const FString& NewText)
+{
+	SafeZoneMulticast(NewText);
+}
+
+bool ABattleMobaCharacter::SafeZoneMulticast_Validate(const FString& NewText)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::SafeZoneMulticast_Implementation(const FString& NewText)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("%s"), *NewText));
+}
+
 bool ABattleMobaCharacter::SetupStats_Validate()
 {
 	return true;

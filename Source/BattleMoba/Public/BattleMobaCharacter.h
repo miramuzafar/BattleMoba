@@ -303,6 +303,17 @@ protected:
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, WithValidation)
 		void SetupStats();
 
+	/*******************SAFEZONE*****************************************/
+
+	UFUNCTION(BlueprintCallable, Category = "SafeZone")
+		void SafeZone(const FString& NewText);
+
+	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
+		void SafeZoneServer(const FString& NewText);
+
+	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, WithValidation)
+		void SafeZoneMulticast(const FString& NewText);
+
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
