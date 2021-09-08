@@ -146,6 +146,9 @@ protected:
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		bool IsHit;
 
+	UPROPERTY(Replicated, EditDefaultsOnly, Category = "HitReaction")
+		bool IsStunned = false;
+
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Anim")
 		bool InRagdoll;
 

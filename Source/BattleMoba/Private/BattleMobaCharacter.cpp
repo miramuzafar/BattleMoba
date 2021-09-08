@@ -52,6 +52,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, AttackerLocation);
 	DOREPLIFETIME(ABattleMobaCharacter, CharMesh);
 	DOREPLIFETIME(ABattleMobaCharacter, currentTarget);
+	DOREPLIFETIME(ABattleMobaCharacter, IsStunned);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -836,88 +837,91 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 {
 	if (GetMesh()->SkeletalMesh != nullptr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
-
-		/**		Disable movement on Action Skill*/
-		if (AnimInsta != nullptr)
+		/**		Checks if player is stunned / still executing Action Skill*/
+		if (this->IsStunned == false)
 		{
-			AnimInsta->CanMove = false;
-		}
-
-		FTimerHandle Delay;
-
-		if (SelectedRow.isOnCD)
-		{
-			if (test == true)
+			if (this->AnimInsta != nullptr)
 			{
-				RotateToTargetSetup();
-			}
+				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
 
-			//if current montage consumes cooldown properties
-			if (SelectedRow.IsUsingCD)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
-				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
-				float montageDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+				/**		Disable movement on Action Skill*/
+				AnimInsta->CanMove = false;
 
-				/**		Enable movement back after montage finished playing*/
-				this->GetWorld()->GetTimerManager().SetTimer(Delay, this, &ABattleMobaCharacter::EnableMovementMode, montageDuration, false);
+				FTimerHandle Delay;
 
-			}
-		}
-		//if current montage will affects player location
-		else if (SelectedRow.UseTranslate)
-		{
-			/*if (Rotate == true)
-			{
-				Rotate = false;
-			}*/
-			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
-
-			float montageTimer = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
-
-			//setting up for translate properties
-			FTimerHandle handle;
-			FTimerDelegate TimerDelegate;
-
-			//launch player forward after finish montage timer
-			TimerDelegate.BindLambda([this, SelectedRow]()
-			{
-				UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE TRANSLATE CHARACTER FORWARD"));
-
-				FVector dashVector = FVector(this->GetCapsuleComponent()->GetForwardVector().X*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Y*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Z);
-
-				this->LaunchCharacter(dashVector, true, true);
-			});
-			//start cooldown the skill
-			this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.218f, false);
-
-			/**		Enable movement back after montage finished playing*/
-			this->GetWorld()->GetTimerManager().SetTimer(Delay, this, &ABattleMobaCharacter::EnableMovementMode, montageTimer, false);
-		}
-
-		else if (SelectedRow.UseSection)
-		{
-			if (IsLocallyControlled() == true)
-			{
-				if (test == true)
+				if (SelectedRow.isOnCD)
 				{
-					RotateToTargetSetup();
+					if (test == true)
+					{
+						RotateToTargetSetup();
+					}
+
+					//if current montage consumes cooldown properties
+					if (SelectedRow.IsUsingCD)
+					{
+						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
+						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
+						float montageDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+
+						/**		Enable movement back after montage finished playing*/
+						this->GetWorld()->GetTimerManager().SetTimer(Delay, this, &ABattleMobaCharacter::EnableMovementMode, montageDuration, false);
+
+					}
+				}
+				//if current montage will affects player location
+				else if (SelectedRow.UseTranslate)
+				{
+					/*if (Rotate == true)
+					{
+						Rotate = false;
+					}*/
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
+
+					float montageTimer = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+
+					//setting up for translate properties
+					FTimerHandle handle;
+					FTimerDelegate TimerDelegate;
+
+					//launch player forward after finish montage timer
+					TimerDelegate.BindLambda([this, SelectedRow]()
+					{
+						UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE TRANSLATE CHARACTER FORWARD"));
+
+						FVector dashVector = FVector(this->GetCapsuleComponent()->GetForwardVector().X*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Y*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Z);
+
+						this->LaunchCharacter(dashVector, true, true);
+					});
+					//start cooldown the skill
+					this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.218f, false);
+
+					/**		Enable movement back after montage finished playing*/
+					this->GetWorld()->GetTimerManager().SetTimer(Delay, this, &ABattleMobaCharacter::EnableMovementMode, montageTimer, false);
+				}
+
+				else if (SelectedRow.UseSection)
+				{
+					if (IsLocallyControlled() == true)
+					{
+						if (test == true)
+						{
+							RotateToTargetSetup();
+						}
+					}
+					/** Play Attack Montage by Section */
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current Section is %s"), *MontageSection.ToString()));
+					PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+					SelectedRow.SkillMoveset->GetSectionLength(AttackSectionUUID);
+				}
+
+				else
+				{
+					//Rotate = false;
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("STATEMENT ELSE")));
 				}
 			}
-			/** Play Attack Montage by Section */
-			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
-			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current Section is %s"), *MontageSection.ToString()));
-			PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
-			SelectedRow.SkillMoveset->GetSectionLength(AttackSectionUUID);
 		}
-
-		else
-		{
-			//Rotate = false;
-			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("STATEMENT ELSE")));
-		}
-
 		this->damage = SelectedRow.Damage;
 		this->HitReactionMoveset = SelectedRow.HitMoveset;
 	}
@@ -1145,7 +1149,7 @@ void ABattleMobaCharacter::MoveForward(float Value)
 		{
 			if (this->AnimInsta)
 			{
-				if (this->AnimInsta->CanMove)
+				if (this->AnimInsta->CanMove && this->IsStunned == false)
 				{
 					// find out which way is forward
 					const FRotator Rotation = Controller->GetControlRotation();
@@ -1168,7 +1172,7 @@ void ABattleMobaCharacter::MoveRight(float Value)
 		{
 			if (this->AnimInsta)
 			{
-				if (this->AnimInsta->CanMove)
+				if (this->AnimInsta->CanMove && this->IsStunned == false)
 				{
 					// find out which way is right
 					const FRotator Rotation = Controller->GetControlRotation();
