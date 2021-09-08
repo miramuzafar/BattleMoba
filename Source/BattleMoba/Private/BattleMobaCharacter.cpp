@@ -51,6 +51,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, Rotate);
 	DOREPLIFETIME(ABattleMobaCharacter, AttackerLocation);
 	DOREPLIFETIME(ABattleMobaCharacter, CharMesh);
+	DOREPLIFETIME(ABattleMobaCharacter, currentTarget);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -155,6 +156,12 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 	W_DamageOutput->SetGenerateOverlapEvents(false);
 
 	TraceDistance = 2000.0f;
+
+	//TargetLock
+	ViewDistanceCol->SetSphereRadius(200.0f);
+
+	ViewDistanceCol->OnComponentBeginOverlap.AddDynamic(this, &ABattleMobaCharacter::OnBeginOverlap);
+	ViewDistanceCol->OnComponentEndOverlap.AddDynamic(this, &ABattleMobaCharacter::OnEndOverlap);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -282,35 +289,44 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 		W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 
-	if (Rotate == true)
+	if (currentTarget != nullptr && Rotate == true && test == true)
 	{
 		if (HasAuthority())
 		{
 			if (this->IsLocallyControlled())
 			{
-				RotateToCameraView(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
-				this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
-				
+				FRotator RotatorVal = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), currentTarget->GetActorLocation());
+				FRotator FinalVal = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, RotatorVal.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
+				FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, GetWorld()->GetDeltaSeconds(), 30.0f);
+				this->SetActorRotation(FinalVal);
+				RotateToCameraView(FinalVal);
+				//this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
+				//
 				//Set rotate to false
-				FTimerHandle handle;
+				/*FTimerHandle handle;
 				FTimerDelegate TimerDelegate;
 				TimerDelegate.BindLambda([this]()
 				{
 					Rotate = false;
 					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
 				});
-				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
+				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);*/
 			}
 		}
 		else
 		{
 			if (this->GetController() != nullptr)
 			{
-				ServerRotateToCameraView(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
-				this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
-				
+				/*ServerRotateToCameraView(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
+				this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));*/
+				FRotator RotatorVal = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), currentTarget->GetActorLocation());
+				FRotator FinalVal = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, RotatorVal.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
+				FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, GetWorld()->GetDeltaSeconds(), 30.0f);
+				ServerRotateToCameraView(FinalVal);
+				this->SetActorRotation(FinalVal);
+
 				//Set rotate to false
-				FTimerHandle handle;
+				/*FTimerHandle handle;
 				FTimerDelegate TimerDelegate;
 				TimerDelegate.BindLambda([this]()
 				{
@@ -318,7 +334,7 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
 				});
 				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
-				//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));*/
 			}
 		}
 	}
@@ -341,18 +357,21 @@ bool ABattleMobaCharacter::RotateToCameraView_Validate(FRotator InRot)
 
 void ABattleMobaCharacter::RotateToCameraView_Implementation(FRotator InRot)
 {
+	//Multicast rotation
+	FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), InRot, GetWorld()->GetDeltaSeconds(), 10.0f);
 	this->SetActorRotation(InRot);
+
 	//setting up for cooldown properties
-	FTimerHandle handle;
-	FTimerDelegate TimerDelegate;
+	/*FTimerHandle handle;
+	FTimerDelegate TimerDelegate;*/
 
 	//set the row boolean to false after finish cooldown timer
-	TimerDelegate.BindLambda([this]()
+	/*TimerDelegate.BindLambda([this]()
 	{
 		Rotate = false;
 		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
 	});
-	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
+	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);*/
 }
 
 void ABattleMobaCharacter::SetupWidget()
@@ -556,10 +575,6 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 								TargetHead = row->TargetIsHead;
 								if (this->IsLocallyControlled())
 								{
-									if (Rotate == false)
-									{
-										Rotate = true;
-									}
 									//play the animation that visible to all clients
 									ServerExecuteAction(*row, AttackSection);
 
@@ -589,10 +604,6 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 						if (this->IsLocallyControlled())
 						{
-							if (Rotate == true)
-							{
-								Rotate = false;
-							}
 							//play the animation that visible to all clients
 							ServerExecuteAction(*row, AttackSection);
 							break;
@@ -604,10 +615,6 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 						if (row->SkillMoveset != nullptr)
 						{
-							if (Rotate == false)
-							{
-								Rotate = true;
-							}
 							TargetHead = row->TargetIsHead;
 
 							AttackCombo(*row);
@@ -812,6 +819,11 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 		if (SelectedRow.isOnCD)
 		{
+			if (test == true)
+			{
+				RotateToTargetSetup();
+			}
+
 			//if current montage consumes cooldown properties
 			if (SelectedRow.IsUsingCD)
 			{
@@ -857,6 +869,13 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 		else if (SelectedRow.UseSection)
 		{
+			if (IsLocallyControlled() == true)
+			{
+				if (test == true)
+				{
+					RotateToTargetSetup();
+				}
+			}
 			/** Play Attack Montage by Section */
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current Section is %s"), *MontageSection.ToString()));
@@ -866,7 +885,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 		else
 		{
-			Rotate = false;
+			//Rotate = false;
 			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("STATEMENT ELSE")));
 		}
 
@@ -997,48 +1016,6 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 		else
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Invalid target: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
 	}
-
-	//DrawDebugSphere(this->GetWorld(), StartPoint, 20.0f, 5, FColor::Purple, false , 1, 0, 1);
-
-	//Ignore self upon colliding
-	//FCollisionQueryParams CP_LKick;
-	//CP_LKick.AddIgnoredActor(this);
-
-	////Sphere trace by channel
-	//bool DetectHit = this->GetWorld()->SweepSingleByChannel(HitRes, StartPoint, EndPoint, FQuat(), ECollisionChannel::ECC_PhysicsBody, FCollisionShape::MakeSphere(20.0f), CP_LKick);
-
-	//if (DetectHit)
-	//{
-	//	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Purple, FString::Printf(TEXT("Sweep channel")));
-	//	if (HitRes.Actor != this)
-	//	{
-	//		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Is not self")));
-	//		ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(HitRes.Actor);
-	//		if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
-	//		{
-	//			if (DoOnce == false)
-	//			{
-	//				//Apply damage
-	//				DoOnce = true;
-
-	//				hitChar->HitLocation = HitRes.Location;
-	//				hitChar->BoneName = HitRes.BoneName;
-	//				hitChar->IsHit = true;
-
-	//				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *hitChar->BoneName.ToString()));
-	//				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *HitRes.GetComponent()->GetName()));
-	//				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Impact: %s"), *hitChar->HitLocation.ToString()));
-	//				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Blocking hit is %s"), (hitChar->IsHit) ? TEXT("True") : TEXT("False")));
-	//				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
-	//				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("hitchar exist")));
-	//				DoDamage(hitChar);
-	//			}
-	//		}
-	//		else
-	//			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Invalid target: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
-	//	}
-
-	//}
 }
 
 bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection)
@@ -1172,6 +1149,58 @@ void ABattleMobaCharacter::MoveRight(float Value)
 					// add movement in that direction
 					AddMovementInput(Direction, Value);
 				}
+			}
+		}
+	}
+}
+
+void ABattleMobaCharacter::OnBeginOverlap(UPrimitiveComponent* OverlappedActor, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor != this)
+	{
+		ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(OtherActor);
+		ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(OtherActor);
+		if ((EnemyChar != nullptr && EnemyChar->TeamName != this->TeamName) || (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName))
+		{
+			this->test = true;
+			//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Distance: %f"), this->GetHorizontalDistanceTo(EnemyChar)));
+		}
+	}
+}
+
+void ABattleMobaCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedActor, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (OtherActor != this)
+	{
+		ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(OtherActor);
+		ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(OtherActor);
+		if ((EnemyChar != nullptr && EnemyChar->TeamName != this->TeamName) || (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName))
+		{
+			this->test = false;
+		}
+	}
+}
+
+void ABattleMobaCharacter::RotateToTargetSetup()
+{
+	//Check for eligible actors
+	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+	{
+		if (*It != this)
+		{
+			ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(*It);
+			ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(*It);
+			if (EnemyChar || EnemyTow)
+			{
+				//if distance is below appropriate value, set rotate to true
+				if (this->GetHorizontalDistanceTo(*It) < 120.0f)
+				{
+					currentTarget = *It;
+					Rotate = true;
+					break;
+				}
+				else
+					Rotate = false;
 			}
 		}
 	}

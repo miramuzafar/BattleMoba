@@ -166,6 +166,13 @@ protected:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Rotate")
 		bool Rotate = false;
 
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Rotate")
+		AActor* currentTarget;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Rotate")
+		bool test = false;
+
+
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FVector AttackerLocation;
 
@@ -222,6 +229,17 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	/** called when something enters the sphere component */
+	UFUNCTION()
+	void OnBeginOverlap(UPrimitiveComponent * OverlappedActor, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+
+	/** called when something leaves the sphere component */
+	UFUNCTION()
+	void OnEndOverlap(UPrimitiveComponent * OverlappedActor, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void RotateToTargetSetup();
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Transformation")
 	void ServerRotateToCameraView(FRotator InRot);
