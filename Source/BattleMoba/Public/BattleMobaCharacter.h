@@ -88,15 +88,8 @@ public:
 	UFUNCTION()
 		void OnRep_Team();
 
-	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
-		void TowerReceiveDamage(ADestructibleTower* Tower, float DamageApply);
-
-
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		TArray<class ABattleMobaPlayerState*> DamageDealers;
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
-		void UpdateHUD();
 
 protected:
 
@@ -303,6 +296,18 @@ protected:
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, WithValidation)
 		void SetupStats();
 
+public:
+	/** Returns CameraBoom subobject **/
+	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+	/** Returns FollowCamera subobject **/
+	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
+		void UpdateHUD();
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
+		void TowerReceiveDamage(ADestructibleTower* Tower, float DamageApply);
+
 	/*******************SAFEZONE*****************************************/
 
 	UFUNCTION(BlueprintCallable, Category = "SafeZone")
@@ -311,12 +316,6 @@ protected:
 	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
 		void SafeZoneServer(const FString& NewText);
 
-	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, WithValidation)
+	UFUNCTION(BlueprintCallable, NetMulticast, Unreliable, WithValidation)
 		void SafeZoneMulticast(const FString& NewText);
-
-public:
-	/** Returns CameraBoom subobject **/
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	/** Returns FollowCamera subobject **/
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };

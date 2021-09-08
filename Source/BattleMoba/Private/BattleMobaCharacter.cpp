@@ -797,7 +797,7 @@ bool ABattleMobaCharacter::SafeZoneMulticast_Validate(const FString& NewText)
 
 void ABattleMobaCharacter::SafeZoneMulticast_Implementation(const FString& NewText)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("%s"), *NewText));
+	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("%s"), *NewText));
 }
 
 bool ABattleMobaCharacter::SetupStats_Validate()
