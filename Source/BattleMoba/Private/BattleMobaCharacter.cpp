@@ -631,11 +631,12 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 
 void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 {
-	//UBattleMobaAnimInstance* AnimInst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
+	/**		checks if the mesh has a skeletal mesh*/
 	if (GetMesh()->SkeletalMesh != nullptr)
 	{
-		/**		Continues combo section of the montage*/
-		if (AnimInsta->Montage_IsPlaying(AttackComboMoveset))
+		/**		Continues combo section of the montage if there is montage playing*/
+		//if (AnimInsta->Montage_IsPlaying(FastComboMoveset)||(AnimInsta->Montage_IsPlaying(StrongkComboMoveset)))
+		if (AnimInsta->IsAnyMontagePlaying())
 		{
 			if (SelectedRow.Section == 3)
 			{
@@ -976,6 +977,7 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Is not self")));
 		ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(hit.Actor);
 
+		TracedChar = hitChar;
 		TowerActor = Cast<ADestructibleTower>(hit.Actor);
 
 		if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)

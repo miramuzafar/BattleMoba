@@ -130,22 +130,18 @@ protected:
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
-	float TraceDistance = 0.0f;
+		float TraceDistance = 0.0f;
 
-	float damage = 0.0f;
+		float damage = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* HitReactionMoveset;
 
-	UPROPERTY(EditDefaultsOnly)
-		UAnimMontage* AttackComboMoveset;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* EnemyHitReactionMoveset;
 
-	
 	//TimerHandle for removing damage dealer array
-	FTimerHandle DealerTimer;
+		FTimerHandle DealerTimer;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD", Meta = (ExposeOnSpawn = "true"))
 		UUserWidget* MainWidget;
@@ -218,6 +214,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Destructible")
 		ADestructibleTower* TowerActor;
+
+	UPROPERTY(VisibleAnywhere, Category = "HitDetection")
+		ABattleMobaCharacter* TracedChar;
 
 protected:
 	// APawn interface
