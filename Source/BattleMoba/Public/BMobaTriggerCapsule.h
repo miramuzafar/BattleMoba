@@ -17,6 +17,9 @@ class BATTLEMOBA_API ABMobaTriggerCapsule : public ATriggerCapsule
 	//Replicated Network setup
 		void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UPROPERTY(VisibleAnywhere)
+		class UStaticMeshComponent* Mesh;
+
 	//3D UI On TriggerBox
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
 		class UWidgetComponent* W_Val;
@@ -30,12 +33,12 @@ public:
 	UFUNCTION()
 		void OnRep_Val();
 
+	UPROPERTY(Replicated)
+		FTimerHandle FlagTimer;
+
 protected:
 	//Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-	UPROPERTY()
-		FTimerHandle FlagTimer;
 
 private:
 

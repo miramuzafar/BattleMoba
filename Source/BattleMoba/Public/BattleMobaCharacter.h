@@ -316,11 +316,11 @@ public:
 
 	/*******************SAFEZONE*****************************************/
 
-	void SafeZone(ABMobaTriggerCapsule* TriggerZone, FTimerHandle* FlagTimer);
+	void SafeZone(ABMobaTriggerCapsule* TriggerZone);
 
 	UFUNCTION(Server, Reliable, WithValidation)
-		void SafeZoneServer(ABMobaTriggerCapsule* TriggerZone, FTimerHandle FlagTimer);
+		void SafeZoneServer(ABMobaTriggerCapsule* TriggerZone);
 
 	UFUNCTION(NetMulticast, Unreliable, WithValidation)
-		void SafeZoneMulticast(ABMobaTriggerCapsule* TriggerZone, FTimerHandle FlagTimer);
+		void SafeZoneMulticast(ABMobaTriggerCapsule* TriggerZone);
 };

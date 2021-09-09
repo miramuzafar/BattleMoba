@@ -14,6 +14,9 @@
 
 void ABMobaTriggerCapsule::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ABMobaTriggerCapsule, FlagTimer);
 }
 
 ABMobaTriggerCapsule::ABMobaTriggerCapsule()
@@ -21,6 +24,12 @@ ABMobaTriggerCapsule::ABMobaTriggerCapsule()
 	//Register Events
 	OnActorBeginOverlap.AddDynamic(this, &ABMobaTriggerCapsule::OnOverlapBegin);
 	OnActorEndOverlap.AddDynamic(this, &ABMobaTriggerCapsule::OnOverlapEnd);
+
+	//Mesh
+	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DisplayMesh"));
+	Mesh->SetupAttachment(RootComponent);
+	Mesh->SetCollisionProfileName("BlockAll");
+	Mesh->SetGenerateOverlapEvents(false);
 
 	//Widget
 	//WidgetComponent
@@ -68,7 +77,7 @@ void ABMobaTriggerCapsule::OnOverlapBegin(AActor* OverlappedActor, AActor* Other
 		ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(OtherActor);
 		if (pc)
 		{
-			pc->SafeZone(this, &FlagTimer);
+			pc->SafeZone(this);
 		}
 	}
 }
@@ -80,7 +89,7 @@ void ABMobaTriggerCapsule::OnOverlapEnd(AActor* OverlappedActor, AActor* OtherAc
 		ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(OtherActor);
 		if (pc)
 		{
-			pc->SafeZone(this, &FlagTimer);
+			pc->SafeZone(this);
 		}
 	}
 }

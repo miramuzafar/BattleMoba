@@ -774,43 +774,43 @@ void ABattleMobaCharacter::EnableMovementMode()
 	}
 }
 
-void ABattleMobaCharacter::SafeZone(ABMobaTriggerCapsule* TriggerZone, FTimerHandle* FlagTimer)
+void ABattleMobaCharacter::SafeZone(ABMobaTriggerCapsule* TriggerZone)
 {
 	if (IsLocallyControlled())
 	{
-		if (this->GetWorld()->GetTimerManager().IsTimerActive(*FlagTimer))
-		{
-			this->GetWorld()->GetTimerManager().ClearTimer(*FlagTimer);
-			return;
-		}
-		else
-		{
-			FTimerDelegate FunctionsNames = FTimerDelegate::CreateUObject(this, &ABattleMobaCharacter::SafeZoneServer, TriggerZone, *FlagTimer);
-			this->GetWorld()->GetTimerManager().SetTimer(*FlagTimer, FunctionsNames, 1.0f, true);
-			return;
-		}
+		//Run server safezone
+		SafeZoneServer(TriggerZone);
 	}
 }
 
-bool ABattleMobaCharacter::SafeZoneServer_Validate(ABMobaTriggerCapsule* TriggerZone, FTimerHandle FlagTimer)
+bool ABattleMobaCharacter::SafeZoneServer_Validate(ABMobaTriggerCapsule* TriggerZone)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::SafeZoneServer_Implementation(ABMobaTriggerCapsule* TriggerZone, FTimerHandle FlagTimer)
+void ABattleMobaCharacter::SafeZoneServer_Implementation(ABMobaTriggerCapsule* TriggerZone)
 {
-	SafeZoneMulticast(TriggerZone, FlagTimer);
+	//Check if no server timer is running, start the timer, else stop the timer
+	if (GetWorld()->GetTimerManager().IsTimerActive(TriggerZone->FlagTimer) == false)
+	{
+		FTimerDelegate FunctionsNames = FTimerDelegate::CreateUObject(this, &ABattleMobaCharacter::SafeZoneMulticast, TriggerZone);
+		GetWorld()->GetTimerManager().SetTimer(TriggerZone->FlagTimer, FunctionsNames, 1.0f, true);
+		return;
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().ClearTimer(TriggerZone->FlagTimer);
+		//SafeZoneMulticast(TriggerZone);
+	}
 }
 
-bool ABattleMobaCharacter::SafeZoneMulticast_Validate(ABMobaTriggerCapsule* TriggerZone, FTimerHandle FlagTimer)
+bool ABattleMobaCharacter::SafeZoneMulticast_Validate(ABMobaTriggerCapsule* TriggerZone)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::SafeZoneMulticast_Implementation(ABMobaTriggerCapsule* TriggerZone, FTimerHandle FlagTimer)
+void ABattleMobaCharacter::SafeZoneMulticast_Implementation(ABMobaTriggerCapsule* TriggerZone)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("TimerStart")));
-	//TriggerZone->OnRep_Val();
 	TriggerZone->val = TriggerZone->val + 1;
 	TriggerZone->OnRep_Val();
 }
