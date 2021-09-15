@@ -541,7 +541,11 @@ bool ABattleMobaCharacter::StunPlayerServer_Validate(bool checkStun)
 
 void ABattleMobaCharacter::StunPlayerServer_Implementation(bool checkStun)
 {
-	StunPlayerClient(checkStun);
+	if (this->GetLocalRole() == ROLE_Authority)
+	{
+		StunPlayerClient(checkStun);
+	}
+	
 }
 
 bool ABattleMobaCharacter::StunPlayerClient_Validate(bool checkStun)
@@ -562,7 +566,14 @@ bool ABattleMobaCharacter::ServerRotateHitActor_Validate(AActor * HitActor, AAct
 
 void ABattleMobaCharacter::ServerRotateHitActor_Implementation(AActor * HitActor, AActor * Attacker)
 {
-	MulticastRotateHitActor(HitActor, Attacker);
+	if (this->GetLocalRole() == ROLE_Authority)
+	{
+		if (HitActor == this)
+		{
+			MulticastRotateHitActor(HitActor, Attacker);
+		}
+	}
+	
 }
 
 bool ABattleMobaCharacter::MulticastRotateHitActor_Validate(AActor * HitActor, AActor * Attacker)
