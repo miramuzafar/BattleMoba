@@ -31,6 +31,7 @@
 #include "BattleMobaGameState.h"
 #include "BattleMobaPlayerState.h"
 #include "BattleMobaGameMode.h"
+#include "BMobaTriggerCapsule.h"
 
 
 void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -900,32 +901,45 @@ void ABattleMobaCharacter::EnableMovementMode()
 	}
 }
 
-void ABattleMobaCharacter::SafeZone(const FString& NewText)
+void ABattleMobaCharacter::SafeZone(ABMobaTriggerCapsule* TriggerZone)
 {
 	if (IsLocallyControlled())
 	{
-		SafeZoneServer(NewText);
+		//Run server safezone
+		SafeZoneServer(TriggerZone);
 	}
 }
 
-bool ABattleMobaCharacter::SafeZoneServer_Validate(const FString& NewText)
+bool ABattleMobaCharacter::SafeZoneServer_Validate(ABMobaTriggerCapsule* TriggerZone)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::SafeZoneServer_Implementation(const FString& NewText)
+void ABattleMobaCharacter::SafeZoneServer_Implementation(ABMobaTriggerCapsule* TriggerZone)
 {
-	SafeZoneMulticast(NewText);
+	//Check if no server timer is running, start the timer, else stop the timer
+	if (GetWorld()->GetTimerManager().IsTimerActive(TriggerZone->FlagTimer) == false)
+	{
+		FTimerDelegate FunctionsNames = FTimerDelegate::CreateUObject(this, &ABattleMobaCharacter::SafeZoneMulticast, TriggerZone);
+		GetWorld()->GetTimerManager().SetTimer(TriggerZone->FlagTimer, FunctionsNames, 1.0f, true);
+		return;
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().ClearTimer(TriggerZone->FlagTimer);
+		//SafeZoneMulticast(TriggerZone);
+	}
 }
 
-bool ABattleMobaCharacter::SafeZoneMulticast_Validate(const FString& NewText)
+bool ABattleMobaCharacter::SafeZoneMulticast_Validate(ABMobaTriggerCapsule* TriggerZone)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::SafeZoneMulticast_Implementation(const FString& NewText)
+void ABattleMobaCharacter::SafeZoneMulticast_Implementation(ABMobaTriggerCapsule* TriggerZone)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("%s"), *NewText));
+	TriggerZone->val = TriggerZone->val + 1;
+	TriggerZone->OnRep_Val();
 }
 
 bool ABattleMobaCharacter::SetupStats_Validate()
