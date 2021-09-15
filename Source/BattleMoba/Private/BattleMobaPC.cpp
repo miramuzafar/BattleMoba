@@ -5,6 +5,7 @@
 #include "Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Camera/PlayerCameraManager.h"
 
 //BattleMoba
 #include "BattleMobaGameMode.h"

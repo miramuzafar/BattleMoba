@@ -127,6 +127,9 @@ protected:
 
 		float damage = 0.0f;
 
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
+		UAnimMontage* CounterMoveset;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* HitReactionMoveset;
 
@@ -200,7 +203,7 @@ protected:
 
 	//*********************Knockout and Respawn***********************************//
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
-	FTimerHandle RespawnTimer;
+		FTimerHandle RespawnTimer;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
 		bool bEnableMove = true;
@@ -213,6 +216,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "HitDetection")
 		ABattleMobaCharacter* TracedChar;
+
 
 protected:
 	// APawn interface
@@ -269,6 +273,18 @@ protected:
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
 		void HitReactionClient(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset);
 
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
+		void StunPlayerServer(bool checkStun);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "HitReaction")
+		void StunPlayerClient(bool checkStun);
+
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
+		void ServerRotateHitActor(AActor* HitActor, AActor* Attacker);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "HitReaction")
+		void MulticastRotateHitActor(AActor* HitActor, AActor* Attacker);
+
 	UFUNCTION()
 		void ClearDamageDealers();
 
@@ -288,9 +304,15 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
 		void AttackCombo(FActionSkill SelectedRow);
 
+	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
+		void ServerCounterAttack(ABattleMobaCharacter* hitActor);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
+		void MulticastCounterAttack(ABattleMobaCharacter* hitActor);
+
 	//*********************Knockout and Respawn***********************************//
 	UFUNCTION(Reliable, Client, WithValidation, Category = "Knockout")
-	void RespawnCharacter();
+		void RespawnCharacter();
 	
 	//Resets Movement Mode
 	UFUNCTION(BlueprintCallable, Category = "Movement")
