@@ -300,7 +300,7 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 			{
 				FRotator RotatorVal = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), currentTarget->GetActorLocation());
 				FRotator FinalVal = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, RotatorVal.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
-				FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, GetWorld()->GetDeltaSeconds(), 30.0f);
+				FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, DeltaTime, 40.0f);
 				this->SetActorRotation(FinalVal);
 				RotateToCameraView(FinalVal);
 				//this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
@@ -324,7 +324,7 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 				this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));*/
 				FRotator RotatorVal = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), currentTarget->GetActorLocation());
 				FRotator FinalVal = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, RotatorVal.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
-				FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, GetWorld()->GetDeltaSeconds(), 30.0f);
+				FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, DeltaTime, 40.0f);
 				ServerRotateToCameraView(FinalVal);
 				this->SetActorRotation(FinalVal);
 
@@ -365,16 +365,16 @@ void ABattleMobaCharacter::RotateToCameraView_Implementation(FRotator InRot)
 	this->SetActorRotation(InRot);
 
 	//setting up for cooldown properties
-	/*FTimerHandle handle;
-	FTimerDelegate TimerDelegate;*/
+	//FTimerHandle handle;
+	//FTimerDelegate TimerDelegate;
 
-	//set the row boolean to false after finish cooldown timer
-	/*TimerDelegate.BindLambda([this]()
-	{
-		Rotate = false;
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
-	});
-	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);*/
+	////set the row boolean to false after finish cooldown timer
+	//TimerDelegate.BindLambda([this]()
+	//{
+	//	Rotate = false;
+	//	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+	//});
+	//this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
 }
 
 void ABattleMobaCharacter::SetupWidget()
@@ -904,6 +904,7 @@ void ABattleMobaCharacter::EnableMovementMode()
 	if (GetMesh()->SkeletalMesh != nullptr)
 	{
 		bEnableMove = true;
+		Rotate = false;
 
 		if (this->AnimInsta)
 		{
@@ -1057,7 +1058,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 				else if (SelectedRow.UseSection)
 				{
-					if (IsLocallyControlled() == true)
+					if (this->IsLocallyControlled())
 					{
 						if (test == true)
 						{
@@ -1334,6 +1335,9 @@ void ABattleMobaCharacter::MoveForward(float Value)
 					// get forward vector
 					const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 					AddMovementInput(Direction, Value);
+					Rotate = false;
+					FoundActors.Empty();
+					currentTarget = NULL;
 				}
 			}
 		}
@@ -1358,20 +1362,24 @@ void ABattleMobaCharacter::MoveRight(float Value)
 					const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 					// add movement in that direction
 					AddMovementInput(Direction, Value);
+					Rotate = false;
+					FoundActors.Empty();
+					currentTarget = NULL;
 				}
 			}
 		}
 	}
 }
-
+//Check for overlapped enemy unit
 void ABattleMobaCharacter::OnBeginOverlap(UPrimitiveComponent* OverlappedActor, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OtherActor != this)
 	{
 		ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(OtherActor);
 		ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(OtherActor);
-		if ((EnemyChar != nullptr && EnemyChar->TeamName != this->TeamName) || (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName))
+		if ((EnemyChar != nullptr && EnemyChar->Health >=0.0f && EnemyChar->TeamName != this->TeamName) || (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName))
 		{
+			//FoundActors.AddUnique(OtherActor);
 			this->test = true;
 			//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Distance: %f"), this->GetHorizontalDistanceTo(EnemyChar)));
 		}
@@ -1384,34 +1392,58 @@ void ABattleMobaCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedActor, AA
 	{
 		ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(OtherActor);
 		ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(OtherActor);
-		if ((EnemyChar != nullptr && EnemyChar->TeamName != this->TeamName) || (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName))
+		if ((EnemyChar != nullptr && EnemyChar->Health >= 0.0f && EnemyChar->TeamName != this->TeamName) || (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName))
 		{
 			this->test = false;
+			//FoundActors.Remove(OtherActor);
+			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Removed")));
 		}
 	}
 }
 
 void ABattleMobaCharacter::RotateToTargetSetup()
 {
-	//Check for eligible actors
-	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+	//Distance actor struct
+	TArray<FActor_Dist> distcollection;
+
+	//Check for eligible character actors
+	for (auto& name : UGameplayStatics::GetGameState(GetWorld())->PlayerArray)
 	{
-		if (*It != this)
+		if (name->GetPawn() != nullptr && name->GetPawn()->IsActorBeingDestroyed() == false)
 		{
-			ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(*It);
-			ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(*It);
-			if (EnemyChar || EnemyTow)
+			ABattleMobaCharacter* enemy = Cast<ABattleMobaCharacter>(name->GetPawn());
+			if (enemy != this && enemy->TeamName != this->TeamName)
 			{
-				//if distance is below appropriate value, set rotate to true
-				if (this->GetHorizontalDistanceTo(*It) < 150.0f)
-				{
-					currentTarget = *It;
-					Rotate = true;
-					break;
-				}
-				else
-					Rotate = false;
+				FoundActors.AddUnique(enemy);
 			}
 		}
+	}
+	//Check for tower actors
+	for (TActorIterator<ADestructibleTower> It(GetWorld()); It; ++It)
+	{
+		ADestructibleTower* currentTower = *It;
+		if (currentTower->TeamName != this->TeamName)
+		{
+			FoundActors.AddUnique(currentTower);
+		}
+	}
+
+	//Look for closest target from an actor
+	UInputLibrary::Distance_Sort(FoundActors, this, false, distcollection);
+
+	ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(distcollection[0].actor);
+	ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(distcollection[0].actor);
+	if (EnemyChar || EnemyTow)
+	{
+		//set new closest actor to target
+		currentTarget = distcollection[0].actor;
+		Rotate = true;
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is close")));
+	}
+	else
+	{
+		Rotate = false;
+		currentTarget = NULL;
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is not close")));
 	}
 }
