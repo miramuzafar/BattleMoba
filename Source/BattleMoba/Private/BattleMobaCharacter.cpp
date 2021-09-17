@@ -55,6 +55,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, currentTarget);
 	DOREPLIFETIME(ABattleMobaCharacter, IsStunned);
 	DOREPLIFETIME(ABattleMobaCharacter, CounterMoveset);
+	DOREPLIFETIME(ABattleMobaCharacter, OnSpecialAttack);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -263,7 +264,47 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 				this->DamageDealers.RemoveSingle(ps);
 			}
 			this->DamageDealers.Emplace(ps);
-			HitReactionClient(this, Damage, EnemyHitReactionMoveset);
+
+			if (damageChar->OnSpecialAttack == true)
+			{
+				HitReactionClient(this, Damage, EnemyHitReactionMoveset);
+			}
+
+			else if (damageChar->OnSpecialAttack == false)
+			{
+				/**		Calculate directional hit detection*/
+				FRotator RotDifference = UKismetMathLibrary::NormalizedDeltaRotator(this->GetViewRotation(), UKismetMathLibrary::FindLookAtRotation(this->GetPawnViewLocation(), damageChar->GetActorLocation()));
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Rotation Delta: %s"), (*RotDifference.ToString())));
+
+				// right
+				if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, -135.0f, -45.0f, true, true))
+				{
+					HitReactionClient(this, Damage, RightHitMoveset);
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from RIGHT")));
+				}
+
+				// front
+				else if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, -45.0f, 45.0f, true, true))
+				{
+					HitReactionClient(this, Damage, FrontHitMoveset);
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from FRONT")));
+				}
+
+				//	left
+				else if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, 45.0f, 135.0f, true, true))
+				{
+					HitReactionClient(this, Damage, LeftHitMoveset);
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from LEFT")));
+				}
+
+				//	back
+				else
+				{
+					HitReactionClient(this, Damage, BackHitMoveset);
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from BACK")));
+				}
+
+			}
 		}
 	}
 	return 0.0f;
@@ -509,13 +550,15 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 						this->GetWorld()->GetTimerManager().SetTimer(this->RespawnTimer, this, &ABattleMobaCharacter::RespawnCharacter, 3.0f, false);
 					}
 				}
+
+
 				this->Health = Temp;
 
-				/**		Force player to face Attacker*/
-				FRotator PlayerRot = UKismetMathLibrary::FindLookAtRotation(this->GetActorLocation(), AttackerLocation);
-				FRotator NewRot = FMath::RInterpTo(this->GetActorRotation(), PlayerRot, GetWorld()->GetDeltaSeconds(), 200.0f);
-				FRotator NewRot2 = FRotator(this->GetActorRotation().Pitch, NewRot.Yaw, this->GetActorRotation().Roll);
-				this->SetActorRotation(NewRot2);
+				///**		Force player to face Attacker*/
+				//FRotator PlayerRot = UKismetMathLibrary::FindLookAtRotation(this->GetActorLocation(), AttackerLocation);
+				//FRotator NewRot = FMath::RInterpTo(this->GetActorRotation(), PlayerRot, GetWorld()->GetDeltaSeconds(), 200.0f);
+				//FRotator NewRot2 = FRotator(this->GetActorRotation().Pitch, NewRot.Yaw, this->GetActorRotation().Roll);
+				//this->SetActorRotation(NewRot2);
 
 				/**		Play hit reaction animation on hit*/
 				float HitDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
@@ -558,6 +601,7 @@ void ABattleMobaCharacter::StunPlayerClient_Implementation(bool checkStun)
 	/**		called in stun hit reaction montage AnimBP*/
 	this->IsStunned = checkStun;
 }
+
 
 bool ABattleMobaCharacter::ServerRotateHitActor_Validate(AActor * HitActor, AActor * Attacker)
 {
@@ -636,7 +680,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 								{
 									AttackSection = "NormalAttack01";
 									//play the animation that visible to all clients
-									ServerExecuteAction(*row, AttackSection);
+									ServerExecuteAction(*row, AttackSection, true);
 
 									//setting up for cooldown properties
 									FTimerHandle handle;
@@ -678,7 +722,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 								{
 									AttackSection = "NormalAttack01";
 									//play the animation that visible to all clients
-									ServerExecuteAction(*row, AttackSection);
+									ServerExecuteAction(*row, AttackSection, false);
 
 									//setting up for cooldown properties
 									FTimerHandle handle;
@@ -745,7 +789,7 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 						if (IsLocallyControlled())
 						{
 							/**		Change next attack to combo montage section*/
-							ServerExecuteAction(SelectedRow, AttackSection);
+							ServerExecuteAction(SelectedRow, AttackSection, false);
 						}
 					}
 
@@ -756,7 +800,7 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 						if (IsLocallyControlled())
 						{
 							/**		Change next attack to combo montage section*/
-							ServerExecuteAction(SelectedRow, AttackSection);
+							ServerExecuteAction(SelectedRow, AttackSection, false);
 						}
 					}
 
@@ -767,7 +811,7 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 						if (IsLocallyControlled())
 						{
 							/**		Change next attack to combo montage section*/
-							ServerExecuteAction(SelectedRow, AttackSection);
+							ServerExecuteAction(SelectedRow, AttackSection, false);
 						}
 					}
 				}
@@ -788,7 +832,7 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 						if (IsLocallyControlled())
 						{
 							/**		Change next attack to combo montage section*/
-							ServerExecuteAction(SelectedRow, AttackSection);
+							ServerExecuteAction(SelectedRow, AttackSection, false);
 						}
 					}
 
@@ -800,7 +844,7 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 						if (IsLocallyControlled())
 						{
 							/**		Change next attack to combo montage section*/
-							ServerExecuteAction(SelectedRow, AttackSection);
+							ServerExecuteAction(SelectedRow, AttackSection, false);
 						}
 					}
 
@@ -816,7 +860,7 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 			AttackSection = "NormalAttack01";
 			if (IsLocallyControlled())
 			{
-				ServerExecuteAction(SelectedRow, AttackSection);
+				ServerExecuteAction(SelectedRow, AttackSection, false);
 			}
 
 			float SectionLength = SelectedRow.SkillMoveset->GetSectionLength(0);
@@ -981,12 +1025,12 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 	}
 }
 
-bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection)
+bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection)
+void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
 {
 	if (GetMesh()->SkeletalMesh != nullptr)
 	{
@@ -999,6 +1043,8 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 				/**		Disable movement on Action Skill*/
 				AnimInsta->CanMove = false;
+
+				this->OnSpecialAttack = bSpecialAttack;
 
 				FTimerHandle Delay;
 
@@ -1014,6 +1060,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 					{
 						/**		set the counter moveset to skillmoveset*/
 						this->CounterMoveset = SelectedRow.SkillMoveset;
+						
 
 						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
@@ -1229,14 +1276,14 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 	}
 }
 
-bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection)
+bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ServerExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection)
+void ABattleMobaCharacter::ServerExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
 {
-	MulticastExecuteAction(SelectedRow, MontageSection);
+	MulticastExecuteAction(SelectedRow, MontageSection, bSpecialAttack);
 }
 
 

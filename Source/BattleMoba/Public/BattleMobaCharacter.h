@@ -139,6 +139,18 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* EnemyHitReactionMoveset;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
+		UAnimMontage* FrontHitMoveset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
+		UAnimMontage* BackHitMoveset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
+		UAnimMontage* RightHitMoveset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
+		UAnimMontage* LeftHitMoveset;
+
 	//TimerHandle for removing damage dealer array
 		FTimerHandle DealerTimer;
 
@@ -154,6 +166,9 @@ protected:
 
 	UPROPERTY(Replicated, EditDefaultsOnly, Category = "HitReaction")
 		bool IsStunned = false;
+
+	UPROPERTY(Replicated, EditDefaultsOnly, Category = "HitReaction")
+		bool OnSpecialAttack = false;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Anim")
 		bool InRagdoll;
@@ -303,11 +318,11 @@ protected:
 
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
-		void ServerExecuteAction(FActionSkill SelectedRow, FName MontageSection);
+		void ServerExecuteAction(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack);
 
 	//Skill replicate on all client
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
-		void MulticastExecuteAction(FActionSkill SelectedRow, FName MontageSection);
+		void MulticastExecuteAction(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack);
 
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
