@@ -12,11 +12,21 @@
 #include "BattleMobaPlayerState.h"
 #include "BattleMobaGameState.h"
 
+ABattleMobaPC::ABattleMobaPC()
+{
+	//SetInputMode(FInputModeUIOnly());
+}
+
 void ABattleMobaPC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ABattleMobaPC, pi);
+}
+
+void ABattleMobaPC::BeginPlay()
+{
+	Super::BeginPlay();
 }
 
 

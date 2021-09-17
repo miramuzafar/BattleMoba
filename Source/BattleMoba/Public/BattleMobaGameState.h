@@ -46,4 +46,5 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Clock")
 		FString Winner;
+
 };
