@@ -230,15 +230,12 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	//this->GetMesh()->SkeletalMesh = CharMesh;
 
 	this->GetMesh()->SetSkeletalMesh(CharMesh, false);
-	this->GetMesh()->SetVisibility(true);
 	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
-	/*if (this->GetMesh()->IsVisible())
-	{
-		AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
-	}*/
+	this->GetMesh()->SetVisibility(true);
 
 	FString Context;
 	for (auto& name : ActionTable->GetRowNames())
@@ -274,7 +271,6 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 void ABattleMobaCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 	FHitResult Hit(ForceInit);
 
 	FVector start = this->GetActorLocation();

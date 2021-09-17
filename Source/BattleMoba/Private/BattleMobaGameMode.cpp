@@ -40,7 +40,6 @@ void ABattleMobaGameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 void ABattleMobaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-
 	Chars = CharSelections;
 
 	//sETTING UP GAME STATE
@@ -70,62 +69,49 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	FTimerHandle handle;
-	FTimerDelegate TimerDelegate;
+	newPlayer = NewPlayer;
 
-	//Possess a pawn
-	TimerDelegate.BindLambda([this, NewPlayer]()
+	if (HasAuthority())
 	{
-		newPlayer = NewPlayer;
-		if (HasAuthority())
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("Player Added : %s"), *newPlayer->GetFName().ToString()));
+
+		//newPlayer = NewPlayer;
+		ABattleMobaPC* MobaPC = Cast<ABattleMobaPC>(newPlayer);
+
+		if (MobaPC)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("Player Added : %s"), *newPlayer->GetFName().ToString()));
+			Players.Add(MobaPC);
 
-			//newPlayer = NewPlayer;
-			ABattleMobaPC* MobaPC = Cast<ABattleMobaPC>(newPlayer);
-
-			if (MobaPC)
+			ABattleMobaPlayerState* PS = Cast <ABattleMobaPlayerState>(MobaPC->PlayerState);
+			if (PS)
 			{
-				Players.Add(MobaPC);
-
-				if (newPlayer->GetPawn() != nullptr)
+				GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+				if (GState)
 				{
-					newPlayer->Destroy(newPlayer->GetPawn());
-				}
-
-				ABattleMobaPlayerState* PS = Cast <ABattleMobaPlayerState>(MobaPC->PlayerState);
-				if (PS)
-				{
-					GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
-					if (GState)
+					PS->Pi = Players.Num() - 1;
+					//PS->SetPlayerIndex(PS->Pi);
+					//Random unique number for character mesh array
+					if (Chars.IsValidIndex(0))
 					{
-						PS->Pi = Players.Num() - 1;
-						//PS->SetPlayerIndex(PS->Pi);
-
-						if (Chars.IsValidIndex(0))
-						{
-							//Random unique number for character mesh array
-							CharIndex = FMath::RandRange(0, Chars.Num() - 1);
-							PS->CharMesh = Chars[CharIndex];
-							Chars.RemoveAtSwap(CharIndex);
-							GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
-						}
-						if ((PS->Pi) < 4)
-						{
-							GState->TeamA.Add(PS->GetPlayerName());
-							SpawnBasedOnTeam("Radiant");
-						}
-						else
-						{
-							GState->TeamB.Add(PS->GetPlayerName());
-							SpawnBasedOnTeam("Dire");
-						}
+						CharIndex = FMath::RandRange(0, Chars.Num() - 1);
+						PS->CharMesh = Chars[CharIndex];
+						Chars.RemoveAtSwap(CharIndex);
+						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
+					}
+					if ((PS->Pi) < 4)
+					{
+						GState->TeamA.Add(PS->GetPlayerName());
+						SpawnBasedOnTeam("Radiant");
+					}
+					else
+					{
+						GState->TeamB.Add(PS->GetPlayerName());
+						SpawnBasedOnTeam("Dire");
 					}
 				}
 			}
 		}
-	});
-	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.01f, false);
+	}
 }
 
 void ABattleMobaGameMode::StartClock()
@@ -186,12 +172,14 @@ void ABattleMobaGameMode::SpawnBasedOnTeam/*_Implementation*/(FName TeamName)
 		{
 			pawn->PlayerName = PS->GetPlayerName();
 			pawn->TeamName = PS->TeamName;
+
 			pawn->CharMesh = PS->CharMesh;
 			PS->SpawnTransform = PStart->GetActorTransform();
 			UGameplayStatics::FinishSpawningActor(pawn, FTransform(PStart->GetActorRotation(), PStart->GetActorLocation()));
 
 			newPlayer->Possess(pawn);
 			newPlayer->ClientSetRotation(PStart->GetActorRotation());
+			//newPlayer->DisableInput(newPlayer);
 		}
 
 	}

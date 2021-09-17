@@ -45,6 +45,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character")
 		TArray<USkeletalMesh*> CharSelections;
 
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character")
+	TArray<USkeletalMesh*> Chars;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Character")
 		int32 CharIndex = 0;
 
@@ -53,8 +56,6 @@ protected:
 	virtual void BeginPlay() override;
 
 	void StartClock();
-
-	TArray<USkeletalMesh*> Chars;
 
 	UFUNCTION(Category = "Spawn")
 		void SpawnBasedOnTeam(FName TeamName);

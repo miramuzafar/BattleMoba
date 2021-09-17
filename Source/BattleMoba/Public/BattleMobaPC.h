@@ -15,10 +15,14 @@ class BATTLEMOBA_API ABattleMobaPC : public APlayerController
 {
 	GENERATED_BODY()
 
+	ABattleMobaPC();
+
 	//Replicated Network setup
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
+
+	virtual void BeginPlay() override;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ID")
 		int32 pi;
