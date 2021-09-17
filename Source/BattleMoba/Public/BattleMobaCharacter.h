@@ -188,6 +188,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "UI")
 		bool WithinVicinity = false;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Rotate")
+		TArray<AActor*> FoundActors;
+
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FVector AttackerLocation;
