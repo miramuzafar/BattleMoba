@@ -771,109 +771,113 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 	/**		checks if the mesh has a skeletal mesh*/
 	if (GetMesh()->SkeletalMesh != nullptr)
 	{
-		/**		Continues combo section of the montage if there is montage playing*/
+		if (AnimInsta != nullptr)
+		{
+			/**		Continues combo section of the montage if there is montage playing*/
 		//if (AnimInsta->Montage_IsPlaying(FastComboMoveset)||(AnimInsta->Montage_IsPlaying(StrongkComboMoveset)))
-		if (AnimInsta->IsAnyMontagePlaying())
-		{
-			if (SelectedRow.Section == 3)
+			if (AnimInsta->IsAnyMontagePlaying())
 			{
-				/**		Checks whether the current montage section contains "Combo" substring*/
-				FName CurrentSection = AnimInsta->Montage_GetCurrentSection(AnimInsta->GetCurrentActiveMontage());
-				if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("Combo"), false, false))
+				if (SelectedRow.Section == 3)
 				{
-					/**		Checks if current combo section contains "01" substring*/
-					if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("01"), false, false))
+					/**		Checks whether the current montage section contains "Combo" substring*/
+					FName CurrentSection = AnimInsta->Montage_GetCurrentSection(AnimInsta->GetCurrentActiveMontage());
+					if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("Combo"), false, false))
 					{
-						FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("02"));
-						AttackSection = FName(*NextSection);
-						if (IsLocallyControlled())
+						/**		Checks if current combo section contains "01" substring*/
+						if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("01"), false, false))
 						{
-							/**		Change next attack to combo montage section*/
-							ServerExecuteAction(SelectedRow, AttackSection, false);
+							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("02"));
+							AttackSection = FName(*NextSection);
+							if (IsLocallyControlled())
+							{
+								/**		Change next attack to combo montage section*/
+								ServerExecuteAction(SelectedRow, AttackSection, false);
+							}
 						}
-					}
 
-					else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("02"), false, false))
-					{
-						FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("03"));
-						AttackSection = FName(*NextSection);
-						if (IsLocallyControlled())
+						else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("02"), false, false))
 						{
-							/**		Change next attack to combo montage section*/
-							ServerExecuteAction(SelectedRow, AttackSection, false);
+							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("03"));
+							AttackSection = FName(*NextSection);
+							if (IsLocallyControlled())
+							{
+								/**		Change next attack to combo montage section*/
+								ServerExecuteAction(SelectedRow, AttackSection, false);
+							}
 						}
-					}
 
-					else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("03"), false, false))
-					{
-						FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("01"));
-						AttackSection = FName(*NextSection);
-						if (IsLocallyControlled())
+						else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("03"), false, false))
 						{
-							/**		Change next attack to combo montage section*/
-							ServerExecuteAction(SelectedRow, AttackSection, false);
+							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("01"));
+							AttackSection = FName(*NextSection);
+							if (IsLocallyControlled())
+							{
+								/**		Change next attack to combo montage section*/
+								ServerExecuteAction(SelectedRow, AttackSection, false);
+							}
 						}
 					}
 				}
-			}
 
-			else if (SelectedRow.Section == 2)
-			{
-				/**		Checks whether the current montage section contains "Combo" substring*/
-				FName CurrentSection = AnimInsta->Montage_GetCurrentSection(AnimInsta->GetCurrentActiveMontage());
-				if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("Combo"), false, false))
+				else if (SelectedRow.Section == 2)
 				{
-					/**		Checks if current combo section contains "01" substring*/
-					if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("01"), false, false))
+					/**		Checks whether the current montage section contains "Combo" substring*/
+					FName CurrentSection = AnimInsta->Montage_GetCurrentSection(AnimInsta->GetCurrentActiveMontage());
+					if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("Combo"), false, false))
 					{
-						FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("02"));
-						AttackSection = FName(*NextSection);
-
-						if (IsLocallyControlled())
+						/**		Checks if current combo section contains "01" substring*/
+						if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("01"), false, false))
 						{
-							/**		Change next attack to combo montage section*/
-							ServerExecuteAction(SelectedRow, AttackSection, false);
+							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("02"));
+							AttackSection = FName(*NextSection);
+
+							if (IsLocallyControlled())
+							{
+								/**		Change next attack to combo montage section*/
+								ServerExecuteAction(SelectedRow, AttackSection, false);
+							}
 						}
-					}
 
-					else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("02"), false, false))
-					{
-						FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("01"));
-						AttackSection = FName(*NextSection);
-
-						if (IsLocallyControlled())
+						else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("02"), false, false))
 						{
-							/**		Change next attack to combo montage section*/
-							ServerExecuteAction(SelectedRow, AttackSection, false);
-						}
-					}
+							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("01"));
+							AttackSection = FName(*NextSection);
 
+							if (IsLocallyControlled())
+							{
+								/**		Change next attack to combo montage section*/
+								ServerExecuteAction(SelectedRow, AttackSection, false);
+							}
+						}
+
+					}
 				}
 			}
-		}
-		/**		Plays the first section of the montage*/
-		else
-		{
-			bAttacking = true;
-			FTimerHandle Timer;
-			FTimerDelegate TimerDelegate;
-			AttackSection = "NormalAttack01";
-			if (IsLocallyControlled())
+			/**		Plays the first section of the montage*/
+			else
 			{
-				ServerExecuteAction(SelectedRow, AttackSection, false);
+				bAttacking = true;
+				FTimerHandle Timer;
+				FTimerDelegate TimerDelegate;
+				AttackSection = "NormalAttack01";
+				if (IsLocallyControlled())
+				{
+					ServerExecuteAction(SelectedRow, AttackSection, false);
+				}
+
+				float SectionLength = SelectedRow.SkillMoveset->GetSectionLength(0);
+
+				TimerDelegate.BindLambda([this]()
+				{
+					bAttacking = false;
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT(" bCombo Attack resets to false")));
+				});
+
+				/**		Reset boolean after section ends*/
+				this->GetWorldTimerManager().SetTimer(Timer, TimerDelegate, SectionLength, false);
 			}
-
-			float SectionLength = SelectedRow.SkillMoveset->GetSectionLength(0);
-
-			TimerDelegate.BindLambda([this]()
-			{
-				bAttacking = false;
-				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT(" bCombo Attack resets to false")));
-			});
-
-			/**		Reset boolean after section ends*/
-			this->GetWorldTimerManager().SetTimer(Timer, TimerDelegate, SectionLength, false);
 		}
+		
 	}
 }
 
