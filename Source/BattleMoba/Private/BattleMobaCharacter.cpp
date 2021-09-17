@@ -272,20 +272,24 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 void ABattleMobaCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	FHitResult Hit(ForceInit);
 
-	FVector start = this->GetActorLocation();
-	FVector End = UGameplayStatics::GetPlayerCameraManager(this, 0)->GetCameraLocation();
-	FCollisionQueryParams CollisionParams;
-	CollisionParams.AddIgnoredActor(this);
-	
-	if (GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams))
+	if (WithinVicinity)
 	{
-		W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
-	}
-	else
-	{
-		W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
+		FHitResult Hit(ForceInit);
+
+		FVector start = this->GetActorLocation();
+		FVector End = UGameplayStatics::GetPlayerCameraManager(this, 0)->GetCameraLocation();
+		FCollisionQueryParams CollisionParams;
+		CollisionParams.AddIgnoredActor(this);
+
+		if (GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams))
+		{
+			W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+		}
+		else
+		{
+			W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
+		}
 	}
 
 	if (currentTarget != nullptr && Rotate == true && test == true)
@@ -1399,7 +1403,7 @@ void ABattleMobaCharacter::RotateToTargetSetup()
 			if (EnemyChar || EnemyTow)
 			{
 				//if distance is below appropriate value, set rotate to true
-				if (this->GetHorizontalDistanceTo(*It) < 120.0f)
+				if (this->GetHorizontalDistanceTo(*It) < 150.0f)
 				{
 					currentTarget = *It;
 					Rotate = true;
