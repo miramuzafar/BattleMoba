@@ -1428,11 +1428,15 @@ void ABattleMobaCharacter::OnBeginOverlap(UPrimitiveComponent* OverlappedActor, 
 	{
 		ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(OtherActor);
 		ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(OtherActor);
-		if ((EnemyChar != nullptr && EnemyChar->Health >=0.0f && EnemyChar->TeamName != this->TeamName) || (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName))
+		if ((EnemyChar != nullptr && EnemyChar->Health >=0.0f && EnemyChar->TeamName != this->TeamName))
 		{
 			//FoundActors.AddUnique(OtherActor);
 			this->test = true;
 			//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Distance: %f"), this->GetHorizontalDistanceTo(EnemyChar)));
+		}
+		else if (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName)
+		{
+			this->test = true;
 		}
 	}
 }
@@ -1441,13 +1445,23 @@ void ABattleMobaCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedActor, AA
 {
 	if (OtherActor != this)
 	{
+		//this->test = false;
 		ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(OtherActor);
 		ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(OtherActor);
 		if ((EnemyChar != nullptr && EnemyChar->Health >= 0.0f && EnemyChar->TeamName != this->TeamName) || (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName))
 		{
-			this->test = false;
-			//FoundActors.Remove(OtherActor);
-			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Removed")));
+			if (this->GetHorizontalDistanceTo(EnemyChar) > ViewDistanceCol->GetScaledSphereRadius())
+			{
+				this->test = false;
+				//FoundActors.Remove(EnemyChar);
+				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Removed")));
+			}
+			else if (this->GetHorizontalDistanceTo(EnemyTow) > ViewDistanceCol->GetScaledSphereRadius())
+			{
+				this->test = false;
+				//FoundActors.Remove(EnemyChar);
+				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Removed")));
+			}
 		}
 	}
 }
