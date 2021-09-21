@@ -137,9 +137,6 @@ protected:
 		UAnimMontage* HitReactionMoveset;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
-		UAnimMontage* EnemyHitReactionMoveset;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* FrontHitMoveset;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
@@ -292,10 +289,10 @@ protected:
 		void DoDamage(AActor* HitActor);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ReceiveDamage")
-		void HitReactionServer(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset);
+		void HitReactionServer(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
-		void HitReactionClient(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset);
+		void HitReactionClient(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection);
 
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void StunPlayerServer(bool checkStun);

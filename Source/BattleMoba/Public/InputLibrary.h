@@ -54,6 +54,18 @@ struct FActionSkill : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
 		UAnimMontage* HitMoveset;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
+		UAnimMontage* FrontHitMoveset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
+		UAnimMontage* BackHitMoveset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
+		UAnimMontage* LeftHitMoveset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
+		UAnimMontage* RightHitMoveset;
+
 	//Check if target hit is head
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target")
 		bool TargetIsHead = false;

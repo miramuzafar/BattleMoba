@@ -267,7 +267,7 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 
 			if (damageChar->OnSpecialAttack == true)
 			{
-				HitReactionClient(this, Damage, EnemyHitReactionMoveset);
+				HitReactionClient(this, Damage, this->HitReactionMoveset, "NormalHit01");
 			}
 
 			else if (damageChar->OnSpecialAttack == false)
@@ -276,31 +276,36 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 				FRotator RotDifference = UKismetMathLibrary::NormalizedDeltaRotator(this->GetViewRotation(), UKismetMathLibrary::FindLookAtRotation(this->GetPawnViewLocation(), damageChar->GetActorLocation()));
 				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Rotation Delta: %s"), (*RotDifference.ToString())));
 
+				/**		Get random index from array of section names*/
+				FName arr[2] = { "NormalHit01", "NormalHit02" };
+				int RandInt = rand() % 2;
+				FName HitSection = arr[RandInt];
+
 				// right
 				if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, -135.0f, -45.0f, true, true))
 				{
-					HitReactionClient(this, Damage, RightHitMoveset);
+					HitReactionClient(this, Damage, this->RightHitMoveset, HitSection);
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from RIGHT")));
 				}
 
 				// front
 				else if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, -45.0f, 45.0f, true, true))
 				{
-					HitReactionClient(this, Damage, FrontHitMoveset);
+					HitReactionClient(this, Damage, this->FrontHitMoveset, HitSection);
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from FRONT")));
 				}
 
 				//	left
 				else if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, 45.0f, 135.0f, true, true))
 				{
-					HitReactionClient(this, Damage, LeftHitMoveset);
+					HitReactionClient(this, Damage, this->LeftHitMoveset, HitSection);
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from LEFT")));
 				}
 
 				//	back
 				else
 				{
-					HitReactionClient(this, Damage, BackHitMoveset);
+					HitReactionClient(this, Damage, this->BackHitMoveset, HitSection);
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from BACK")));
 				}
 
@@ -446,28 +451,28 @@ void ABattleMobaCharacter::SetupWidget()
 	//Setup3DWidgetVisibility();
 }
 
-bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived, UAnimMontage* HitMoveset)
+bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::HitReactionServer_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset)
+void ABattleMobaCharacter::HitReactionServer_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection)
 {
 	if (this->GetLocalRole() == ROLE_Authority)
 	{
 		if (HitActor == this)
 		{
-			HitReactionClient(HitActor, DamageReceived, HitMoveset);
+			HitReactionClient(HitActor, DamageReceived, HitMoveset, MontageSection);
 		}
 	}
 }
 
-bool ABattleMobaCharacter::HitReactionClient_Validate(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset)
+bool ABattleMobaCharacter::HitReactionClient_Validate(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset)
+void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection)
 {
 	if (HitActor == this)
 	{
@@ -561,7 +566,8 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 				//this->SetActorRotation(NewRot2);
 
 				/**		Play hit reaction animation on hit*/
-				float HitDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+				PlayAnimMontage(HitMoveset, 1.0f, MontageSection);
+				//float HitDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
 				this->IsHit = false;
 				OnRep_Health();
 
@@ -1132,6 +1138,10 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 		}
 		this->damage = SelectedRow.Damage;
 		this->HitReactionMoveset = SelectedRow.HitMoveset;
+		this->FrontHitMoveset = SelectedRow.FrontHitMoveset;
+		this->BackHitMoveset = SelectedRow.BackHitMoveset;
+		this->LeftHitMoveset = SelectedRow.LeftHitMoveset;
+		this->RightHitMoveset = SelectedRow.RightHitMoveset;
 		
 	}
 }
@@ -1230,7 +1240,7 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 				DrawDebugBox(GetWorld(), hit.ImpactPoint, FVector(5, 5, 5), FColor::Emerald, false, 2.0f);
 
 				/**		opponent is on counter attack*/
-				if (hitChar->AnimInsta->Montage_IsPlaying(CounterMoveset))
+				if (hitChar->AnimInsta->Montage_IsPlaying(hitChar->CounterMoveset))
 				{
 					hitChar->HitLocation = hit.Location;
 					hitChar->BoneName = hit.BoneName;
@@ -1256,7 +1266,13 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Blocking hit is %s"), (hitChar->IsHit) ? TEXT("True") : TEXT("False")));
 					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(hitChar)));
 					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("hitchar exist")));
-					hitChar->EnemyHitReactionMoveset = this->HitReactionMoveset;
+
+					/**		set the hitActor hit movesets from the same row of skill moveset the attacker used*/
+					hitChar->HitReactionMoveset = this->HitReactionMoveset;
+					hitChar->FrontHitMoveset = this->FrontHitMoveset;
+					hitChar->BackHitMoveset = this->BackHitMoveset;
+					hitChar->LeftHitMoveset = this->LeftHitMoveset;
+					hitChar->RightHitMoveset = this->RightHitMoveset;
 					DoDamage(hitChar);
 				}
 				
