@@ -214,8 +214,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Target")
 		bool TargetHead = false;
 
-		int32 AttackSectionUUID;
-
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
 		FName AttackSection = "NormalAttack01";
 
@@ -229,7 +227,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
 		bool bEnableMove = true;
 
-	UPROPERTY(VisibleAnywhere, Category = "Anims")
+	UPROPERTY(VisibleAnywhere, Category = "Anim")
 		UBattleMobaAnimInstance* AnimInsta;
 
 	UPROPERTY(VisibleAnywhere, Category = "Destructible")
@@ -238,6 +236,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "HitDetection")
 		ABattleMobaCharacter* TracedChar;
 
+	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category = "HitReaction")
+		UParticleSystem* HitEffect;
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
+		FName ActiveSocket;
 
 protected:
 	// APawn interface
@@ -305,6 +308,15 @@ protected:
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void MulticastRotateHitActor(AActor* HitActor, AActor* Attacker);
+
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
+		void ServerSpawnEffect(ABattleMobaCharacter* EmitActor, ABattleMobaCharacter* HitActor);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "HitReaction")
+		void MulticastSpawnEffect(ABattleMobaCharacter* EmitActor, ABattleMobaCharacter* HitActor);
+
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
+		void SetActiveSocket(FName SocketName);
 
 	UFUNCTION()
 		void ClearDamageDealers();

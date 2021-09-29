@@ -21,6 +21,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetStringLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Components/SkinnedMeshComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ABattleMobaCharacter
@@ -56,6 +57,8 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, IsStunned);
 	DOREPLIFETIME(ABattleMobaCharacter, CounterMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, OnSpecialAttack);
+	DOREPLIFETIME(ABattleMobaCharacter, HitEffect);
+	DOREPLIFETIME(ABattleMobaCharacter, ActiveSocket);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -264,6 +267,9 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 				this->DamageDealers.RemoveSingle(ps);
 			}
 			this->DamageDealers.Emplace(ps);
+
+			ServerSpawnEffect(damageChar, this);
+			
 
 			if (damageChar->OnSpecialAttack == true)
 			{
@@ -558,6 +564,7 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 
 
 				this->Health = Temp;
+				this->IsHit = false;
 
 				///**		Force player to face Attacker*/
 				//FRotator PlayerRot = UKismetMathLibrary::FindLookAtRotation(this->GetActorLocation(), AttackerLocation);
@@ -568,7 +575,6 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 				/**		Play hit reaction animation on hit*/
 				PlayAnimMontage(HitMoveset, 1.0f, MontageSection);
 				//float HitDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
-				this->IsHit = false;
 				OnRep_Health();
 
 				//run clear damage dealers array
@@ -638,6 +644,49 @@ void ABattleMobaCharacter::MulticastRotateHitActor_Implementation(AActor * HitAc
 	FRotator NewRot = FMath::RInterpTo(HitActor->GetActorRotation(), hitCharRot, HitActor->GetWorld()->GetDeltaSeconds(), 200.0f);
 	FRotator FinalRot = FRotator(HitActor->GetActorRotation().Pitch, NewRot.Yaw, HitActor->GetActorRotation().Roll);
 	HitActor->SetActorRotation(FinalRot);
+}
+
+bool ABattleMobaCharacter::ServerSpawnEffect_Validate(ABattleMobaCharacter * EmitActor, ABattleMobaCharacter* HitActor)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerSpawnEffect_Implementation(ABattleMobaCharacter * EmitActor, ABattleMobaCharacter* HitActor)
+{
+	if (this->GetLocalRole() == ROLE_Authority)
+	{
+		if (HitActor == this)
+		{
+			MulticastSpawnEffect(EmitActor, HitActor);
+		}
+	}
+}
+
+bool ABattleMobaCharacter::MulticastSpawnEffect_Validate(ABattleMobaCharacter * EmitActor, ABattleMobaCharacter* HitActor)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MulticastSpawnEffect_Implementation(ABattleMobaCharacter * EmitActor, ABattleMobaCharacter* HitActor)
+{
+	if (EmitActor->HitEffect != nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Particle Effect Spawned")));
+
+		UGameplayStatics::SpawnEmitterAtLocation(EmitActor->GetWorld(), EmitActor->HitEffect, EmitActor->GetMesh()->GetSocketLocation(EmitActor->ActiveSocket), FRotator::ZeroRotator, false);
+	}
+}
+
+bool ABattleMobaCharacter::SetActiveSocket_Validate(FName SocketName)
+{
+	return true;
+}
+void ABattleMobaCharacter::SetActiveSocket_Implementation(FName SocketName)
+{
+	if (SocketName != NAME_None)
+	{
+		this->ActiveSocket = SocketName;
+	}
 }
 
 void ABattleMobaCharacter::ClearDamageDealers()
@@ -1042,75 +1091,67 @@ bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill Selected
 
 void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
 {
-	if (GetMesh()->SkeletalMesh != nullptr)
+	/**		Checks SkeletalMesh exists / AnimInst Exists / Player is Stunned or still executing a skill */
+	if (this->GetMesh()->SkeletalMesh != nullptr || this->AnimInsta != nullptr || this->IsStunned == false)
 	{
-		/**		Checks if player is stunned / still executing Action Skill*/
-		if (this->IsStunned == false)
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
+
+		/**		Disable movement on Action Skill*/
+		AnimInsta->CanMove = false;
+
+		if (bSpecialAttack == true)
 		{
-			if (this->AnimInsta != nullptr)
+			this->OnSpecialAttack = bSpecialAttack;
+
+			if (test == true)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
+				RotateToTargetSetup();
+			}
 
-				/**		Disable movement on Action Skill*/
-				AnimInsta->CanMove = false;
+			//if current montage consumes cooldown properties
+			if (SelectedRow.IsUsingCD)
+			{
+				/**		set the counter moveset to skillmoveset*/
+				this->CounterMoveset = SelectedRow.SkillMoveset;
 
-				this->OnSpecialAttack = bSpecialAttack;
 
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
+
+				PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+			}
+		}
+
+		else
+		{
+			if (SelectedRow.UseTranslate)
+			{
 				FTimerHandle Delay;
 
-				if (SelectedRow.isOnCD && !SelectedRow.UseTranslate)
+				if (SelectedRow.IsUsingCD)
 				{
-					if (test == true)
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
+
+					float montageTimer = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+
+					//setting up for translate properties
+					FTimerHandle handle;
+					FTimerDelegate TimerDelegate;
+
+					//launch player forward after 0.218f
+					TimerDelegate.BindLambda([this, SelectedRow]()
 					{
-						RotateToTargetSetup();
-					}
+						UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE TRANSLATE CHARACTER FORWARD"));
 
-					//if current montage consumes cooldown properties
-					if (SelectedRow.IsUsingCD)
-					{
-						/**		set the counter moveset to skillmoveset*/
-						this->CounterMoveset = SelectedRow.SkillMoveset;
-						
+						FVector dashVector = FVector(this->GetCapsuleComponent()->GetForwardVector().X*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Y*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Z);
 
-						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
-						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
-						//float montageDuration = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
-						
-						/**		Enable movement back after montage finished playing*/
-						//this->GetWorld()->GetTimerManager().SetTimer(Delay, this, &ABattleMobaCharacter::EnableMovementMode, montageDuration, false);
+						this->LaunchCharacter(dashVector, true, true);
+					});
+					/**		cooldown to execute lines inside TimerDelegate*/
+					this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
 
-
-						PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
-					}
-				}
-				//if current montage will affects player location
-				else if (SelectedRow.isOnCD && SelectedRow.UseTranslate)
-				{
-					if (SelectedRow.IsUsingCD)
-					{
-						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
-
-						float montageTimer = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
-
-						//setting up for translate properties
-						FTimerHandle handle;
-						FTimerDelegate TimerDelegate;
-
-						//launch player forward after 0.218f
-						TimerDelegate.BindLambda([this, SelectedRow]()
-						{
-							UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE TRANSLATE CHARACTER FORWARD"));
-
-							FVector dashVector = FVector(this->GetCapsuleComponent()->GetForwardVector().X*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Y*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Z);
-
-							this->LaunchCharacter(dashVector, true, true);
-						});
-						/**		cooldown to execute lines inside TimerDelegate*/
-						this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.218f, false);
-
-						/**		Enable movement back after montage finished playing*/
-						this->GetWorld()->GetTimerManager().SetTimer(Delay, this, &ABattleMobaCharacter::EnableMovementMode, montageTimer, false);
-					}					
+					///**		Enable movement back after montage finished playing*/
+					//this->GetWorld()->GetTimerManager().SetTimer(Delay, this, &ABattleMobaCharacter::EnableMovementMode, montageTimer, false);
 				}
 
 				else if (SelectedRow.UseSection)
@@ -1126,22 +1167,22 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current Section is %s"), *MontageSection.ToString()));
 					PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
-					SelectedRow.SkillMoveset->GetSectionLength(AttackSectionUUID);
 				}
 
 				else
 				{
-					//Rotate = false;
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("STATEMENT ELSE")));
 				}
-			}
+			}			
 		}
+
 		this->damage = SelectedRow.Damage;
 		this->HitReactionMoveset = SelectedRow.HitMoveset;
 		this->FrontHitMoveset = SelectedRow.FrontHitMoveset;
 		this->BackHitMoveset = SelectedRow.BackHitMoveset;
 		this->LeftHitMoveset = SelectedRow.LeftHitMoveset;
 		this->RightHitMoveset = SelectedRow.RightHitMoveset;
+		this->HitEffect = SelectedRow.HitImpact;
 		
 	}
 }
@@ -1238,15 +1279,15 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 				/**		Debug line trace elements*/
 				DoOnce = true;
 				DrawDebugBox(GetWorld(), hit.ImpactPoint, FVector(5, 5, 5), FColor::Emerald, false, 2.0f);
+				hitChar->HitLocation = hit.Location;
+				hitChar->BoneName = hit.BoneName;
+				hitChar->IsHit = true;
+				hitChar->AttackerLocation = this->GetActorLocation();
+				hitChar->HitEffect = this->HitEffect;
 
-				/**		opponent is on counter attack*/
+				/**		attacking a player who is on Special Attack 2 (Counter Attack)*/
 				if (hitChar->AnimInsta->Montage_IsPlaying(hitChar->CounterMoveset))
 				{
-					hitChar->HitLocation = hit.Location;
-					hitChar->BoneName = hit.BoneName;
-					hitChar->IsHit = true;
-					hitChar->AttackerLocation = this->GetActorLocation();
-					
 					ServerRotateHitActor(hitChar, this);
 					ServerCounterAttack(hitChar);
 					
@@ -1254,12 +1295,6 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 
 				else
 				{
-					//Apply damage
-					hitChar->HitLocation = hit.Location;
-					hitChar->BoneName = hit.BoneName;
-					hitChar->IsHit = true;
-					hitChar->AttackerLocation = this->GetActorLocation();
-
 					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *hitChar->BoneName.ToString()));
 					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Bone: %s"), *hit.GetComponent()->GetName()));
 					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Impact: %s"), *hitChar->HitLocation.ToString()));
@@ -1273,6 +1308,8 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 					hitChar->BackHitMoveset = this->BackHitMoveset;
 					hitChar->LeftHitMoveset = this->LeftHitMoveset;
 					hitChar->RightHitMoveset = this->RightHitMoveset;
+
+					//Apply damage
 					DoDamage(hitChar);
 				}
 				
@@ -1528,3 +1565,4 @@ void ABattleMobaCharacter::RotateToTargetSetup()
 		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is not close")));
 	}
 }
+
