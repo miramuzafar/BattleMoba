@@ -146,7 +146,7 @@ protected:
 		float BuffDamage = 1.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
-		float Defence = 1.0f;
+		float Defence = 110.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		float BuffDefence = 1.0f;
@@ -244,8 +244,17 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
 		FName AttackSection = "NormalAttack01";
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
+		FName CurrentSection = "NormalAttack01";
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
 		float AttackSectionLength = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "ActionSkill")
+		float RemainingLength = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
+		bool ComboDoOnce = false;
 
 	//*********************Knockout and Respawn***********************************//
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
@@ -354,11 +363,11 @@ protected:
 
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
-		void ServerExecuteAction(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack);
+		void ServerExecuteAction(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack);
 
 	//Skill replicate on all client
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
-		void MulticastExecuteAction(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack);
+		void MulticastExecuteAction(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack);
 
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
