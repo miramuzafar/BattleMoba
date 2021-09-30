@@ -128,16 +128,31 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
 		float TraceDistance = 0.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Interaction")
-		float Defence = 0.0f;
+	
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		float BaseDamage = 0.0f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		int MinDamage = 0;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		int MaxDamage = 0;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		float ActualDamage = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
+		float BuffDamage = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
+		float Defence = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
+		float BuffDefence = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
+		float ReducedDefence = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
 		UAnimMontage* CounterMoveset;

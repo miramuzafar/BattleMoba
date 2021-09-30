@@ -1216,15 +1216,14 @@ void ABattleMobaCharacter::DoDamage_Implementation(AActor* HitActor)
 {
 	if (this != HitActor)
 	{
-		
-		/**		Calculate Damage Dealt by Enemy */
-		this->ActualDamage = this->BaseDamage * 120 / (120 + Defence);
+		/**		Calculate Damage Dealt by Enemy and set precision to tenth */
+		this->ActualDamage = (this->BaseDamage * this->BuffDamage) * (100 / 100 + ((Defence * BuffDefence) * ((1 - ReducedDefence) * 0.84)));
+		this->ActualDamage = FMath::RoundToInt(ActualDamage);
 
 		/**		Apply Damage */
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Damage Applied: %f"), this->ActualDamage));
+		UE_LOG(LogTemp, Warning, TEXT("Damage Applied: %f"), this->ActualDamage);
 		this->ActualDamage = UGameplayStatics::ApplyDamage(HitActor, this->ActualDamage, nullptr, this, nullptr);
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Damage Applied: %f"), this->BaseDamage));
-		UE_LOG(LogTemp, Warning, TEXT("Damage Applied: %f"), this->BaseDamage);
-
 	}
 }
 
