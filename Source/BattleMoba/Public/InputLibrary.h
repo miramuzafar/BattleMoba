@@ -48,7 +48,10 @@ struct FActionSkill : public FTableRowBase
 
 	//Damage to be dealt from the action
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
-		float Damage = 0.0f;
+		int MinDamage = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+		int MaxDamage = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effect")
 		UParticleSystem* HitImpact;
