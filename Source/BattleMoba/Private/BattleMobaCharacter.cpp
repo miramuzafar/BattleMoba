@@ -193,7 +193,7 @@ void ABattleMobaCharacter::OnRep_Health()
 			FString TheFloatStr = FString::SanitizeFloat(this->Health);
 
 			HealthText->SetText(FText::FromString(TheFloatStr));
-			HealthBar->SetPercent(FMath::Clamp(this->Health / 100.0f, 0.0f, 1.0f));
+			HealthBar->SetPercent(FMath::Clamp(this->Health / this->MaxHealth, 0.0f, 1.0f));
 		}
 	}
 	//this->Health = UGestureInputsFunctions::UpdateProgressBarComponent(this->WidgetHUD, "HPBar", "Health", "HP", "Pain Meter", this->Health, this->MaxHealth);
