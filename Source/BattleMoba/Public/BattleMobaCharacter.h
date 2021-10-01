@@ -128,7 +128,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
 		float TraceDistance = 0.0f;
 
-	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
+		int OrbsAmount = 0;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		float BaseDamage = 0.0f;
@@ -185,10 +186,10 @@ protected:
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		bool IsHit;
 
-	UPROPERTY(Replicated, EditDefaultsOnly, Category = "HitReaction")
+	UPROPERTY(EditDefaultsOnly, Category = "HitReaction")
 		bool IsStunned = false;
 
-	UPROPERTY(Replicated, EditDefaultsOnly, Category = "HitReaction")
+	UPROPERTY(EditDefaultsOnly, Category = "HitReaction")
 		bool OnSpecialAttack = false;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Anim")
@@ -275,7 +276,7 @@ protected:
 	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category = "HitReaction")
 		UParticleSystem* HitEffect;
 
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FName ActiveSocket;
 
 protected:
@@ -353,6 +354,10 @@ protected:
 
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void SetActiveSocket(FName SocketName);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "HitReaction")
+		void MulticastSetActiveSocket(FName SocketName);
+
 
 	UFUNCTION()
 		void ClearDamageDealers();

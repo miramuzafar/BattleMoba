@@ -55,11 +55,8 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, AttackerLocation);
 	DOREPLIFETIME(ABattleMobaCharacter, CharMesh);
 	DOREPLIFETIME(ABattleMobaCharacter, currentTarget);
-	DOREPLIFETIME(ABattleMobaCharacter, IsStunned);
 	DOREPLIFETIME(ABattleMobaCharacter, CounterMoveset);
-	DOREPLIFETIME(ABattleMobaCharacter, OnSpecialAttack);
 	DOREPLIFETIME(ABattleMobaCharacter, HitEffect);
-	DOREPLIFETIME(ABattleMobaCharacter, ActiveSocket);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -585,6 +582,11 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 				if (this->GetWorldTimerManager().IsTimerActive(this->DealerTimer))
 				{
 					this->GetWorldTimerManager().ClearTimer(this->DealerTimer);
+
+					if (this->IsLocallyControlled())
+					{
+						SetActiveSocket(NAME_None);
+					}
 				}
 				this->GetWorldTimerManager().SetTimer(this->DealerTimer, this, &ABattleMobaCharacter::ClearDamageDealers, 5.0f, true);
 			}
@@ -686,6 +688,19 @@ bool ABattleMobaCharacter::SetActiveSocket_Validate(FName SocketName)
 	return true;
 }
 void ABattleMobaCharacter::SetActiveSocket_Implementation(FName SocketName)
+{
+	if (this->GetLocalRole() == ROLE_Authority)
+	{
+		MulticastSetActiveSocket(SocketName);
+	}
+}
+
+bool ABattleMobaCharacter::MulticastSetActiveSocket_Validate(FName SocketName)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MulticastSetActiveSocket_Implementation(FName SocketName)
 {
 	if (SocketName != NAME_None)
 	{
