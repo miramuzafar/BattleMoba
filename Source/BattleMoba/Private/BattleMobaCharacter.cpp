@@ -1143,7 +1143,17 @@ void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF * 
 		if (cf->valDire <= 0.0f)
 		{
 			cf->valDire = 0.0f;
-			cf->valRadiant = cf->valRadiant + 1;
+
+			if (cf->valRadiant < 100.0f)
+			{
+				cf->valRadiant = cf->valRadiant + 1;
+			}
+
+			else
+			{
+				cf->valRadiant = 100.0f;
+				cf->isCompleted = true;
+			}
 		}
 
 		else
@@ -1159,7 +1169,17 @@ void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF * 
 		if (cf->valRadiant <= 0.0f)
 		{
 			cf->valRadiant = 0.0f;
-			cf->valDire = cf->valDire + 1;
+
+			if (cf->valDire < 100.0f)
+			{
+				cf->valDire = cf->valDire + 1;
+			}
+			
+			else
+			{
+				cf->valDire = 100.0f;
+				cf->isCompleted = true;
+			}
 		}
 
 		else
@@ -1208,7 +1228,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 	/**		Checks SkeletalMesh exists / AnimInst Exists / Player is Stunned or still executing a skill */
 	if (this->GetMesh()->SkeletalMesh != nullptr)
 	{
-		if (this->AnimInsta != nullptr || this->IsStunned == false)
+		if (this->AnimInsta != nullptr && this->IsStunned == false)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
 
@@ -1253,7 +1273,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 						//FTimerHandle handle;
 						//FTimerDelegate TimerDelegate;
 
-						////launch player forward after 0.218f
+						////launch player forwa rd after 0.218f
 						//TimerDelegate.BindLambda([this, SelectedRow]()
 						//{
 						//	UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE TRANSLATE CHARACTER FORWARD"));
