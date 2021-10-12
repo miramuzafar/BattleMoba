@@ -94,6 +94,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		TArray<class ABattleMobaPlayerState*> DamageDealers;
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ControlFlag")
+		bool CTFentering;
+
 protected:
 
 	/** Resets HMD orientation in VR. */
@@ -254,9 +257,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ActionSkill")
 		float RemainingLength = 0.0f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
-		bool ComboDoOnce = false;
-
 	//*********************Knockout and Respawn***********************************//
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
 		FTimerHandle RespawnTimer;
@@ -278,6 +278,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FName ActiveSocket;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Status")
+		FName CTFteam = "";
 
 protected:
 	// APawn interface
@@ -395,6 +398,12 @@ protected:
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, WithValidation)
 		void SetupStats();
 
+	UFUNCTION(Server, Reliable, WithValidation)
+		void ControlFlagServer(ABattleMobaCTF* cf);
+
+	UFUNCTION(NetMulticast, Unreliable, WithValidation)
+		void ControlFlagMulticast(ABattleMobaCTF* cf, FName Team);
+
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -403,6 +412,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
 		void UpdateHUD();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
+		void CreateCPHUD();
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
 		void TowerReceiveDamage(ADestructibleTower* Tower, float DamageApply);
@@ -416,4 +428,9 @@ public:
 
 	UFUNCTION(NetMulticast, Unreliable, WithValidation)
 		void SafeZoneMulticast(ABMobaTriggerCapsule* TriggerZone);
+
+	/***********************CONTROL FLAG MODE*****************************/
+
+	void ControlFlagMode(ABattleMobaCTF* cf);
+
 };

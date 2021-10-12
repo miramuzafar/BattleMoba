@@ -33,6 +33,7 @@
 #include "BattleMobaPlayerState.h"
 #include "BattleMobaGameMode.h"
 #include "BMobaTriggerCapsule.h"
+#include "BattleMobaCTF.h"
 
 
 void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -57,6 +58,8 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, currentTarget);
 	DOREPLIFETIME(ABattleMobaCharacter, CounterMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, HitEffect);
+	DOREPLIFETIME(ABattleMobaCharacter, CTFteam);
+	DOREPLIFETIME(ABattleMobaCharacter, CTFentering);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -252,6 +255,8 @@ void ABattleMobaCharacter::BeginPlay()
 			row->isOnCD = false;
 		}
 	}
+
+	/*CreateCPHUD();*/
 }
 
 float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -1077,8 +1082,93 @@ bool ABattleMobaCharacter::SafeZoneMulticast_Validate(ABMobaTriggerCapsule* Trig
 
 void ABattleMobaCharacter::SafeZoneMulticast_Implementation(ABMobaTriggerCapsule* TriggerZone)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("SAFE ZONE??????????")));
+	
 	TriggerZone->val = TriggerZone->val + 1;
 	TriggerZone->OnRep_Val();
+}
+
+void ABattleMobaCharacter::ControlFlagMode(ABattleMobaCTF * cf)
+{
+	if (this->IsLocallyControlled())
+	{
+		//Run server Control Flag
+		ControlFlagServer(cf);
+	}
+	
+}
+
+bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF * cf)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF * cf)
+{
+	if (cf->RadiantControl > 0 && cf->DireControl == 0)
+	{
+		CTFteam = "Radiant";
+		ControlFlagMulticast(cf, CTFteam);
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current CTF is %s"), ((*CTFteam.ToString()))));
+	}
+
+	else if (cf->DireControl > 0 && cf->RadiantControl == 0)
+	{
+		CTFteam = "Dire";
+		ControlFlagMulticast(cf, CTFteam);
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current CTF is %s"), ((*CTFteam.ToString()))));
+	}
+
+	else
+	{
+		CTFteam = "";
+		ControlFlagMulticast(cf, CTFteam);
+
+	}
+
+	cf->RadiantControl = 0;
+	cf->DireControl = 0;
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current CTF is %s"), ((*CTFteam.ToString()))));
+	
+}
+
+bool ABattleMobaCharacter::ControlFlagMulticast_Validate(ABattleMobaCTF * cf, FName Team)
+{
+	return true;
+}
+void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF * cf, FName Team)
+{
+	if (Team == "Radiant")
+	{
+		if (cf->valDire <= 0.0f)
+		{
+			cf->valDire = 0.0f;
+			cf->valRadiant = cf->valRadiant + 1;
+		}
+
+		else
+		{
+			cf->valDire = cf->valDire - 1;
+		}
+
+		cf->OnRep_Val();
+	}
+
+	else if (Team == "Dire")
+	{
+		if (cf->valRadiant <= 0.0f)
+		{
+			cf->valRadiant = 0.0f;
+			cf->valDire = cf->valDire + 1;
+		}
+
+		else
+		{
+			cf->valRadiant = cf->valRadiant - 1;
+		}
+
+		cf->OnRep_Val();
+	}
 }
 
 bool ABattleMobaCharacter::SetupStats_Validate()
@@ -1196,25 +1286,6 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 						if (ActiveSection != MontageSection)
 						{
 							AnimInsta->Montage_SetNextSection(ActiveSection, MontageSection, SelectedRow.SkillMoveset);
-							//if (ComboDoOnce == false)
-							//{
-							//	ComboDoOnce = true;
-							//	
-
-							//	FTimerHandle handle;
-							//	FTimerDelegate TimerDelegate;
-							//	float SectionLength = SelectedRow.SkillMoveset->GetSectionLength(0);
-
-							//	//launch player forward after 0.218f
-							//	TimerDelegate.BindLambda([this]()
-							//	{
-							//		ComboDoOnce = false;
-				
-							//	});
-
-
-							//	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, SectionLength, false);
-							//}
 							
 						}
 						
@@ -1271,7 +1342,7 @@ void ABattleMobaCharacter::DoDamage_Implementation(AActor* HitActor)
 	if (this != HitActor)
 	{
 		/**		Calculate Damage Dealt by Enemy and set precision to tenth */
-		this->ActualDamage = (this->BaseDamage * this->BuffDamage) * (100 / 100 + ((Defence * BuffDefence) * ((1 - ReducedDefence) * 0.84)));
+		this->ActualDamage = (this->BaseDamage * this->BuffDamage) * (100 / (100 + ((Defence * BuffDefence) * ((1 - ReducedDefence) * 0.84))));
 		this->ActualDamage = FMath::RoundToInt(ActualDamage);
 
 		/**		Apply Damage */
@@ -1626,4 +1697,5 @@ void ABattleMobaCharacter::RotateToTargetSetup()
 		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is not close")));
 	}
 }
+
 
