@@ -60,6 +60,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, HitEffect);
 	DOREPLIFETIME(ABattleMobaCharacter, CTFteam);
 	DOREPLIFETIME(ABattleMobaCharacter, CTFentering);
+	DOREPLIFETIME(ABattleMobaCharacter, ActorsToGetGold);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -256,7 +257,7 @@ void ABattleMobaCharacter::BeginPlay()
 		}
 	}
 
-	/*CreateCPHUD();*/
+	CreateCPHUD();
 }
 
 float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -1098,6 +1099,8 @@ void ABattleMobaCharacter::ControlFlagMode(ABattleMobaCTF * cf)
 	
 }
 
+
+
 bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF * cf)
 {
 	return true;
@@ -1109,14 +1112,12 @@ void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF * cf)
 	{
 		CTFteam = "Radiant";
 		ControlFlagMulticast(cf, CTFteam);
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current CTF is %s"), ((*CTFteam.ToString()))));
 	}
 
 	else if (cf->DireControl > 0 && cf->RadiantControl == 0)
 	{
 		CTFteam = "Dire";
 		ControlFlagMulticast(cf, CTFteam);
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current CTF is %s"), ((*CTFteam.ToString()))));
 	}
 
 	else
@@ -1128,7 +1129,7 @@ void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF * cf)
 
 	cf->RadiantControl = 0;
 	cf->DireControl = 0;
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current CTF is %s"), ((*CTFteam.ToString()))));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current CTF Team is %s"), ((*CTFteam.ToString()))));
 	
 }
 
@@ -1136,10 +1137,12 @@ bool ABattleMobaCharacter::ControlFlagMulticast_Validate(ABattleMobaCTF * cf, FN
 {
 	return true;
 }
+
 void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF * cf, FName Team)
 {
 	if (Team == "Radiant")
 	{
+		//		Decrease the valDire if exists first before increasing valRadiant
 		if (cf->valDire <= 0.0f)
 		{
 			cf->valDire = 0.0f;
@@ -1147,18 +1150,21 @@ void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF * 
 			if (cf->valRadiant < 100.0f)
 			{
 				cf->valRadiant = cf->valRadiant + 1;
+				cf->isCompleted = false;
 			}
 
 			else
 			{
 				cf->valRadiant = 100.0f;
-				cf->isCompleted = true;
+				cf->ControllerTeam = "Radiant";
+				cf->isCompleted = true;	
 			}
 		}
 
 		else
 		{
 			cf->valDire = cf->valDire - 1;
+			cf->isCompleted = false;
 		}
 
 		cf->OnRep_Val();
@@ -1173,11 +1179,13 @@ void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF * 
 			if (cf->valDire < 100.0f)
 			{
 				cf->valDire = cf->valDire + 1;
+				cf->isCompleted = false;
 			}
 			
 			else
 			{
 				cf->valDire = 100.0f;
+				cf->ControllerTeam = "Dire";
 				cf->isCompleted = true;
 			}
 		}
@@ -1185,10 +1193,13 @@ void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF * 
 		else
 		{
 			cf->valRadiant = cf->valRadiant - 1;
+			cf->isCompleted = false;
 		}
 
 		cf->OnRep_Val();
+		
 	}
+	
 }
 
 bool ABattleMobaCharacter::SetupStats_Validate()
@@ -1717,5 +1728,4 @@ void ABattleMobaCharacter::RotateToTargetSetup()
 		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is not close")));
 	}
 }
-
 

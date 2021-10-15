@@ -97,6 +97,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ControlFlag")
 		bool CTFentering;
 
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "ControlFlag")
+		TArray<AActor*> ActorsToGetGold;
+
 protected:
 
 	/** Resets HMD orientation in VR. */

@@ -12,6 +12,7 @@
 #include "Styling/SlateColor.h"
 
 #include "BattleMobaCharacter.h"
+#include "BattleMobaPlayerState.h"
 
 void ABattleMobaCTF::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -23,6 +24,7 @@ void ABattleMobaCTF::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ABattleMobaCTF, RadiantControl);
 	DOREPLIFETIME(ABattleMobaCTF, DireControl);
 	DOREPLIFETIME(ABattleMobaCTF, isCompleted);
+	DOREPLIFETIME(ABattleMobaCTF, GoldTimer);
 }
 
 // Sets default values
@@ -67,7 +69,14 @@ void ABattleMobaCTF::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//		Run TimerFunction every ControllingSpeed after 1 second the game has started
 	this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, true, 1.0f);
+
+	//		Find all actors of class ONCE for GoldTimerFunction
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABattleMobaCharacter::StaticClass(), GiveGoldActors);
+
+	//		Run GoldTimerFunction every 1 second after 50 seconds the game has started
+	this->GetWorldTimerManager().SetTimer(GoldTimer, this, &ABattleMobaCTF::GoldTimerFunction, 1.0f, true, 20.0f);
 }
 
 void ABattleMobaCTF::OnOverlapBegin(AActor * OverlappedActor, AActor * OtherActor)
@@ -140,56 +149,85 @@ void ABattleMobaCTF::OnRep_Val()
 
 void ABattleMobaCTF::TimerFunction()
 {
-	if (!isCompleted)
-	{
-		//		check overlapping actor in CTF sphere for every second
-		this->GetOverlappingActors(this->OverlappedPlayer, ABattleMobaCharacter::StaticClass());
-		int arrLength = this->OverlappedPlayer.Num();
+	//		check overlapping actor in CTF sphere for every controlling speed
+	this->GetOverlappingActors(this->OverlappedPlayer, ABattleMobaCharacter::StaticClass());
+	int arrLength = this->OverlappedPlayer.Num();
 
+	for (uint8 i = 0; i < arrLength; ++i)
+	{
+		ActivePlayer = Cast<ABattleMobaCharacter>(this->OverlappedPlayer[i]);
+
+		if (ActivePlayer)
+		{
+			if (ActivePlayer->CTFentering == true)
+			{
+				if (ActivePlayer->TeamName == "Radiant" && this->RadiantControl >= 0)
+				{
+					this->RadiantControl = this->RadiantControl + 1;
+				}
+
+				else if (ActivePlayer->TeamName == "Dire" && this->DireControl >= 0)
+				{
+					this->DireControl = this->DireControl + 1;
+				}
+
+				ActivePlayer->ControlFlagMode(this);
+			}
+
+			else if (ActivePlayer->CTFentering == false)
+			{
+				if (ActivePlayer->TeamName == "Radiant" && this->RadiantControl >= 1)
+				{
+					this->RadiantControl = this->RadiantControl - 1;
+				}
+
+				else if (ActivePlayer->TeamName == "Dire" && this->DireControl >= 1)
+				{
+					this->DireControl = this->DireControl - 1;
+				}
+
+				ActivePlayer->ControlFlagMode(this);
+			}
+		}
+	}
+}
+
+void ABattleMobaCTF::GoldTimerFunction()
+{
+	if (isCompleted)
+	{
+		int arrLength = this->GiveGoldActors.Num();
+
+		//		for every player of the controller team will gain chi orbs for every second when the Control Flag progress reaches 100
 		for (uint8 i = 0; i < arrLength; ++i)
 		{
-			ActivePlayer = Cast<ABattleMobaCharacter>(this->OverlappedPlayer[i]);
-			
-			if (ActivePlayer)
+			ABattleMobaCharacter* player = Cast<ABattleMobaCharacter>(GiveGoldActors[i]);
+			if (player != nullptr && player->IsActorBeingDestroyed() == false)
 			{
-				if (ActivePlayer->CTFentering == true)
+				ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(player->GetPlayerState());
+				if (ps->TeamName == ControllerTeam)
 				{
-					if (ActivePlayer->TeamName == "Radiant" && this->RadiantControl >= 0)
+					if (this->PointName == "BaseFlag")
 					{
-						this->RadiantControl = this->RadiantControl + 1;
+						ps->ChiOrbs = ps->ChiOrbs + 1;
+					}
+					
+					else if (this->PointName == "MinorFlag")
+					{
+						ps->ChiOrbs = ps->ChiOrbs + 3;
 					}
 
-					else if (ActivePlayer->TeamName == "Dire" && this->DireControl >= 0)
+					else if (PointName == "MajorFlag")
 					{
-						this->DireControl = this->DireControl + 1;
+						ps->ChiOrbs = ps->ChiOrbs + 10;
 					}
 
-					ActivePlayer->ControlFlagMode(this);
-				}
-				
-				else if (ActivePlayer->CTFentering == false)
-				{
-					if (ActivePlayer->TeamName == "Radiant" && this->RadiantControl >= 1)
-					{
-						this->RadiantControl = this->RadiantControl - 1;
-					}
-
-					else if (ActivePlayer->TeamName == "Dire" && this->DireControl >= 1)
-					{
-						this->DireControl = this->DireControl - 1;
-					}
-
-					ActivePlayer->ControlFlagMode(this);
+					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("PointName %s"), ((*PointName.ToString()))));
 				}
 			}
 		}
 	}
-
-	else
-	{
-		//		stop CTF timer when it is fully controlled by a team
-		this->GetWorldTimerManager().ClearTimer(FlagTimer);
-	}
+	
 }
 
 

@@ -73,12 +73,21 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Status")
 		bool isCompleted = false;
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		TArray<AActor*> GiveGoldActors;
+
 public:
 
 	UPROPERTY(Replicated)
 		FTimerHandle FlagTimer;
 
 	void TimerFunction();
+
+
+	UPROPERTY(Replicated)
+		FTimerHandle GoldTimer;
+
+	void GoldTimerFunction();
 
 protected:
 
