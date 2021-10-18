@@ -15,6 +15,7 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleMobaPlayerState, Assist);
 	DOREPLIFETIME(ABattleMobaPlayerState, TeamName);
 	DOREPLIFETIME(ABattleMobaPlayerState, CharMesh);
+	DOREPLIFETIME(ABattleMobaPlayerState, ChiOrbs);
 }
 
 bool ABattleMobaPlayerState::SetPlayerIndex_Validate(int32 PlayerIndex)

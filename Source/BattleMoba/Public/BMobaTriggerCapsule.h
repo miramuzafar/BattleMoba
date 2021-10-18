@@ -36,15 +36,19 @@ public:
 	UPROPERTY(Replicated)
 		FTimerHandle FlagTimer;
 
+
 protected:
-	//Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+
+		//Called when the game starts or when spawned
+		virtual void BeginPlay() override;
 
 private:
 
+	
 	//overlap begin function
 	UFUNCTION()
 		void OnOverlapBegin(class AActor* OverlappedActor, class AActor* OtherActor);
+
 
 	//overlap end function
 	UFUNCTION()

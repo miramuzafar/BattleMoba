@@ -36,10 +36,10 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 		class UStaticMeshComponent* TowerMesh;
 
-	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_UpdateHealth, BlueprintReadOnly, Category = Destructible)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Destructible)
 		float DamageValue;
 
-	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_UpdateHealth, BlueprintReadOnly, Category = Destructible)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Destructible)
 		float ImpulseValue;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UI)

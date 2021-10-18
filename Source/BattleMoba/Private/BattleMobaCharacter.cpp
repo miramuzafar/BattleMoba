@@ -33,6 +33,7 @@
 #include "BattleMobaPlayerState.h"
 #include "BattleMobaGameMode.h"
 #include "BMobaTriggerCapsule.h"
+#include "BattleMobaCTF.h"
 
 
 void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -48,17 +49,18 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, BoneName);
 	DOREPLIFETIME(ABattleMobaCharacter, HitLocation);
 	DOREPLIFETIME(ABattleMobaCharacter, AttackSection);
+	DOREPLIFETIME(ABattleMobaCharacter, CurrentSection);
 	DOREPLIFETIME(ABattleMobaCharacter, TargetHead);
 	DOREPLIFETIME(ABattleMobaCharacter, DamageDealers);
 	DOREPLIFETIME(ABattleMobaCharacter, Rotate);
 	DOREPLIFETIME(ABattleMobaCharacter, AttackerLocation);
 	DOREPLIFETIME(ABattleMobaCharacter, CharMesh);
 	DOREPLIFETIME(ABattleMobaCharacter, currentTarget);
-	DOREPLIFETIME(ABattleMobaCharacter, IsStunned);
 	DOREPLIFETIME(ABattleMobaCharacter, CounterMoveset);
-	DOREPLIFETIME(ABattleMobaCharacter, OnSpecialAttack);
 	DOREPLIFETIME(ABattleMobaCharacter, HitEffect);
-	DOREPLIFETIME(ABattleMobaCharacter, ActiveSocket);
+	DOREPLIFETIME(ABattleMobaCharacter, CTFteam);
+	DOREPLIFETIME(ABattleMobaCharacter, CTFentering);
+	DOREPLIFETIME(ABattleMobaCharacter, ActorsToGetGold);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -254,6 +256,8 @@ void ABattleMobaCharacter::BeginPlay()
 			row->isOnCD = false;
 		}
 	}
+
+	CreateCPHUD();
 }
 
 float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -584,6 +588,11 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 				if (this->GetWorldTimerManager().IsTimerActive(this->DealerTimer))
 				{
 					this->GetWorldTimerManager().ClearTimer(this->DealerTimer);
+
+					if (this->IsLocallyControlled())
+					{
+						SetActiveSocket(NAME_None);
+					}
 				}
 				this->GetWorldTimerManager().SetTimer(this->DealerTimer, this, &ABattleMobaCharacter::ClearDamageDealers, 5.0f, true);
 			}
@@ -686,6 +695,19 @@ bool ABattleMobaCharacter::SetActiveSocket_Validate(FName SocketName)
 }
 void ABattleMobaCharacter::SetActiveSocket_Implementation(FName SocketName)
 {
+	if (this->GetLocalRole() == ROLE_Authority)
+	{
+		MulticastSetActiveSocket(SocketName);
+	}
+}
+
+bool ABattleMobaCharacter::MulticastSetActiveSocket_Validate(FName SocketName)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MulticastSetActiveSocket_Implementation(FName SocketName)
+{
 	if (SocketName != NAME_None)
 	{
 		this->ActiveSocket = SocketName;
@@ -738,7 +760,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 								{
 									AttackSection = "NormalAttack01";
 									//play the animation that visible to all clients
-									ServerExecuteAction(*row, AttackSection, true);
+									ServerExecuteAction(*row, CurrentSection, AttackSection, true);
 
 									//setting up for cooldown properties
 									FTimerHandle handle;
@@ -780,7 +802,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 								{
 									AttackSection = "NormalAttack01";
 									//play the animation that visible to all clients
-									ServerExecuteAction(*row, AttackSection, false);
+									ServerExecuteAction(*row, CurrentSection, AttackSection, false);
 
 									//setting up for cooldown properties
 									FTimerHandle handle;
@@ -831,14 +853,17 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 	{
 		if (AnimInsta != nullptr)
 		{
-			/**		Continues combo section of the montage if there is montage playing*/
+			/**		Continues combo section of the montage if there is montage playing */
 		//if (AnimInsta->Montage_IsPlaying(FastComboMoveset)||(AnimInsta->Montage_IsPlaying(StrongkComboMoveset)))
 			if (AnimInsta->IsAnyMontagePlaying())
 			{
+				/**		Checks whether the current montage section contains "Combo" substring */
+				CurrentSection = AnimInsta->Montage_GetCurrentSection(AnimInsta->GetCurrentActiveMontage());
+
+				/**		Cue "ServerExecuteAction" after current section is finished playing */
+
 				if (SelectedRow.Section == 3)
 				{
-					/**		Checks whether the current montage section contains "Combo" substring*/
-					FName CurrentSection = AnimInsta->Montage_GetCurrentSection(AnimInsta->GetCurrentActiveMontage());
 					if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("Combo"), false, false))
 					{
 						/**		Checks if current combo section contains "01" substring*/
@@ -846,10 +871,11 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 						{
 							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("02"));
 							AttackSection = FName(*NextSection);
-							if (IsLocallyControlled())
+
+							if (this->IsLocallyControlled())
 							{
 								/**		Change next attack to combo montage section*/
-								ServerExecuteAction(SelectedRow, AttackSection, false);
+								ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, false);
 							}
 						}
 
@@ -857,30 +883,30 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 						{
 							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("03"));
 							AttackSection = FName(*NextSection);
-							if (IsLocallyControlled())
+
+							if (this->IsLocallyControlled())
 							{
 								/**		Change next attack to combo montage section*/
-								ServerExecuteAction(SelectedRow, AttackSection, false);
+								ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, false);
 							}
 						}
 
-						else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("03"), false, false))
-						{
-							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("01"));
-							AttackSection = FName(*NextSection);
-							if (IsLocallyControlled())
-							{
-								/**		Change next attack to combo montage section*/
-								ServerExecuteAction(SelectedRow, AttackSection, false);
-							}
-						}
+						//else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("03"), false, false))
+						//{
+						//	FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("01"));
+						//	AttackSection = FName(*NextSection);
+						//	
+						//	if (this->IsLocallyControlled())
+						//	{
+						//		/**		Change next attack to combo montage section*/
+						//		ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, false);
+						//	}
+						//}
 					}
 				}
 
 				else if (SelectedRow.Section == 2)
 				{
-					/**		Checks whether the current montage section contains "Combo" substring*/
-					FName CurrentSection = AnimInsta->Montage_GetCurrentSection(AnimInsta->GetCurrentActiveMontage());
 					if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("Combo"), false, false))
 					{
 						/**		Checks if current combo section contains "01" substring*/
@@ -889,24 +915,25 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("02"));
 							AttackSection = FName(*NextSection);
 
-							if (IsLocallyControlled())
+							if (this->IsLocallyControlled())
 							{
 								/**		Change next attack to combo montage section*/
-								ServerExecuteAction(SelectedRow, AttackSection, false);
+								ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, false);
 							}
 						}
 
-						else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("02"), false, false))
-						{
-							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("01"));
-							AttackSection = FName(*NextSection);
+						//else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("02"), false, false))
+						//{
+						//	FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("01"));
+						//	AttackSection = FName(*NextSection);
 
-							if (IsLocallyControlled())
-							{
-								/**		Change next attack to combo montage section*/
-								ServerExecuteAction(SelectedRow, AttackSection, false);
-							}
-						}
+						//	if (this->IsLocallyControlled())
+						//	{
+						//		/**		Change next attack to combo montage section*/
+						//		ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, false);
+						//	}
+						//	
+						//}
 
 					}
 				}
@@ -918,12 +945,12 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 				FTimerHandle Timer;
 				FTimerDelegate TimerDelegate;
 				AttackSection = "NormalAttack01";
+				CurrentSection = "NormalAttack01";
+
 				if (IsLocallyControlled())
 				{
-					ServerExecuteAction(SelectedRow, AttackSection, false);
+					ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, false);
 				}
-
-				float SectionLength = SelectedRow.SkillMoveset->GetSectionLength(0);
 
 				TimerDelegate.BindLambda([this]()
 				{
@@ -932,7 +959,7 @@ void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
 				});
 
 				/**		Reset boolean after section ends*/
-				this->GetWorldTimerManager().SetTimer(Timer, TimerDelegate, SectionLength, false);
+				this->GetWorldTimerManager().SetTimer(Timer, TimerDelegate, AttackSectionLength, false);
 			}
 		}
 		
@@ -956,10 +983,10 @@ bool ABattleMobaCharacter::MulticastCounterAttack_Validate(ABattleMobaCharacter*
 
 void ABattleMobaCharacter::MulticastCounterAttack_Implementation(ABattleMobaCharacter* hitActor)
 {
-	FName CurrentSection = hitActor->AnimInsta->Montage_GetCurrentSection(hitActor->CounterMoveset);
+	FName CounterCurrentSection = hitActor->AnimInsta->Montage_GetCurrentSection(hitActor->CounterMoveset);
 
 	/**		If current montage section is CheckInput. go to next available section*/
-	if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("CheckInput"), false, false))
+	if (UKismetStringLibrary::Contains(CounterCurrentSection.ToString(), TEXT("CheckInput"), false, false))
 	{
 		FTimerHandle Delay;
 		FString NextSection = "CounterAttack01";
@@ -1056,8 +1083,123 @@ bool ABattleMobaCharacter::SafeZoneMulticast_Validate(ABMobaTriggerCapsule* Trig
 
 void ABattleMobaCharacter::SafeZoneMulticast_Implementation(ABMobaTriggerCapsule* TriggerZone)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("SAFE ZONE??????????")));
+	
 	TriggerZone->val = TriggerZone->val + 1;
 	TriggerZone->OnRep_Val();
+}
+
+void ABattleMobaCharacter::ControlFlagMode(ABattleMobaCTF * cf)
+{
+	if (this->IsLocallyControlled())
+	{
+		//Run server Control Flag
+		ControlFlagServer(cf);
+	}
+	
+}
+
+
+
+bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF * cf)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF * cf)
+{
+	if (cf->RadiantControl > 0 && cf->DireControl == 0)
+	{
+		CTFteam = "Radiant";
+		ControlFlagMulticast(cf, CTFteam);
+	}
+
+	else if (cf->DireControl > 0 && cf->RadiantControl == 0)
+	{
+		CTFteam = "Dire";
+		ControlFlagMulticast(cf, CTFteam);
+	}
+
+	else
+	{
+		CTFteam = "";
+		ControlFlagMulticast(cf, CTFteam);
+
+	}
+
+	cf->RadiantControl = 0;
+	cf->DireControl = 0;
+	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current CTF Team is %s"), ((*CTFteam.ToString()))));
+	
+}
+
+bool ABattleMobaCharacter::ControlFlagMulticast_Validate(ABattleMobaCTF * cf, FName Team)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF * cf, FName Team)
+{
+	if (Team == "Radiant")
+	{
+		//		Decrease the valDire if exists first before increasing valRadiant
+		if (cf->valDire <= 0.0f)
+		{
+			cf->valDire = 0.0f;
+
+			if (cf->valRadiant < 100.0f)
+			{
+				cf->valRadiant = cf->valRadiant + 1;
+				cf->isCompleted = false;
+			}
+
+			else
+			{
+				cf->valRadiant = 100.0f;
+				cf->ControllerTeam = "Radiant";
+				cf->isCompleted = true;	
+			}
+		}
+
+		else
+		{
+			cf->valDire = cf->valDire - 1;
+			cf->isCompleted = false;
+		}
+
+		cf->OnRep_Val();
+	}
+
+	else if (Team == "Dire")
+	{
+		if (cf->valRadiant <= 0.0f)
+		{
+			cf->valRadiant = 0.0f;
+
+			if (cf->valDire < 100.0f)
+			{
+				cf->valDire = cf->valDire + 1;
+				cf->isCompleted = false;
+			}
+			
+			else
+			{
+				cf->valDire = 100.0f;
+				cf->ControllerTeam = "Dire";
+				cf->isCompleted = true;
+			}
+		}
+
+		else
+		{
+			cf->valRadiant = cf->valRadiant - 1;
+			cf->isCompleted = false;
+		}
+
+		cf->OnRep_Val();
+		
+	}
+	
 }
 
 bool ABattleMobaCharacter::SetupStats_Validate()
@@ -1087,22 +1229,22 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 	}
 }
 
-bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
+bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
+void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack)
 {
 	/**		Checks SkeletalMesh exists / AnimInst Exists / Player is Stunned or still executing a skill */
 	if (this->GetMesh()->SkeletalMesh != nullptr)
 	{
-		if (this->AnimInsta != nullptr || this->IsStunned == false)
+		if (this->AnimInsta != nullptr && this->IsStunned == false)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
 
 			/**		Disable movement on Action Skill*/
-			AnimInsta->CanMove = false;
+			this->AnimInsta->CanMove = false;
 			this->OnSpecialAttack = bSpecialAttack;
 
 			if (bSpecialAttack == true)
@@ -1142,7 +1284,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 						//FTimerHandle handle;
 						//FTimerDelegate TimerDelegate;
 
-						////launch player forward after 0.218f
+						////launch player forwa rd after 0.218f
 						//TimerDelegate.BindLambda([this, SelectedRow]()
 						//{
 						//	UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE TRANSLATE CHARACTER FORWARD"));
@@ -1161,17 +1303,31 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 				else if (SelectedRow.UseSection)
 				{
-					if (this->IsLocallyControlled())
+					/*if (this->IsLocallyControlled())
 					{
 						if (test == true)
 						{
 							RotateToTargetSetup();
 						}
 					}
-					/** Play Attack Montage by Section */
-					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
-					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current Section is %s"), *MontageSection.ToString()));
-					PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+					*/
+					
+					if (AnimInsta->Montage_IsPlaying(SelectedRow.SkillMoveset))
+					{
+						if (ActiveSection != MontageSection)
+						{
+							AnimInsta->Montage_SetNextSection(ActiveSection, MontageSection, SelectedRow.SkillMoveset);
+							
+						}
+						
+					}
+
+					else
+					{
+						AttackSectionLength = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+					}
+										
+					//PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
 				}
 
 				else
@@ -1216,15 +1372,14 @@ void ABattleMobaCharacter::DoDamage_Implementation(AActor* HitActor)
 {
 	if (this != HitActor)
 	{
-		
-		/**		Calculate Damage Dealt by Enemy */
-		this->ActualDamage = this->BaseDamage * 120 / (120 + Defence);
+		/**		Calculate Damage Dealt by Enemy and set precision to tenth */
+		this->ActualDamage = (this->BaseDamage * this->BuffDamage) * (100 / (100 + ((Defence * BuffDefence) * ((1 - ReducedDefence) * 0.84))));
+		this->ActualDamage = FMath::RoundToInt(ActualDamage);
 
 		/**		Apply Damage */
-		this->ActualDamage = UGameplayStatics::ApplyDamage(HitActor, this->ActualDamage, nullptr, this, nullptr);
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Damage Applied: %f"), this->ActualDamage));
 		UE_LOG(LogTemp, Warning, TEXT("Damage Applied: %f"), this->ActualDamage);
-
+		this->ActualDamage = UGameplayStatics::ApplyDamage(HitActor, this->ActualDamage, nullptr, this, nullptr);
 	}
 }
 
@@ -1341,14 +1496,14 @@ void ABattleMobaCharacter::FireTrace_Implementation(FVector StartPoint, FVector 
 	}
 }
 
-bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
+bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ServerExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
+void ABattleMobaCharacter::ServerExecuteAction_Implementation(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack)
 {
-	MulticastExecuteAction(SelectedRow, MontageSection, bSpecialAttack);
+	MulticastExecuteAction(SelectedRow, ActiveSection, MontageSection, bSpecialAttack);
 }
 
 

@@ -94,6 +94,12 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		TArray<class ABattleMobaPlayerState*> DamageDealers;
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ControlFlag")
+		bool CTFentering;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "ControlFlag")
+		TArray<AActor*> ActorsToGetGold;
+
 protected:
 
 	/** Resets HMD orientation in VR. */
@@ -128,16 +134,32 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
 		float TraceDistance = 0.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Interaction")
-		float Defence = 0.0f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
+		int OrbsAmount = 0;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		float BaseDamage = 0.0f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		int MinDamage = 0;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		int MaxDamage = 0;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		float ActualDamage = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
+		float BuffDamage = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
+		float Defence = 110.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
+		float BuffDefence = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
+		float ReducedDefence = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
 		UAnimMontage* CounterMoveset;
@@ -170,10 +192,10 @@ protected:
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		bool IsHit;
 
-	UPROPERTY(Replicated, EditDefaultsOnly, Category = "HitReaction")
+	UPROPERTY(EditDefaultsOnly, Category = "HitReaction")
 		bool IsStunned = false;
 
-	UPROPERTY(Replicated, EditDefaultsOnly, Category = "HitReaction")
+	UPROPERTY(EditDefaultsOnly, Category = "HitReaction")
 		bool OnSpecialAttack = false;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Anim")
@@ -229,8 +251,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
 		FName AttackSection = "NormalAttack01";
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
+		FName CurrentSection = "NormalAttack01";
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
 		float AttackSectionLength = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "ActionSkill")
+		float RemainingLength = 0.0f;
 
 	//*********************Knockout and Respawn***********************************//
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
@@ -251,8 +279,11 @@ protected:
 	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category = "HitReaction")
 		UParticleSystem* HitEffect;
 
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FName ActiveSocket;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Status")
+		FName CTFteam = "";
 
 protected:
 	// APawn interface
@@ -330,6 +361,10 @@ protected:
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void SetActiveSocket(FName SocketName);
 
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "HitReaction")
+		void MulticastSetActiveSocket(FName SocketName);
+
+
 	UFUNCTION()
 		void ClearDamageDealers();
 
@@ -339,11 +374,11 @@ protected:
 
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
-		void ServerExecuteAction(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack);
+		void ServerExecuteAction(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack);
 
 	//Skill replicate on all client
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
-		void MulticastExecuteAction(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack);
+		void MulticastExecuteAction(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack);
 
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
@@ -366,6 +401,12 @@ protected:
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, WithValidation)
 		void SetupStats();
 
+	UFUNCTION(Server, Reliable, WithValidation)
+		void ControlFlagServer(ABattleMobaCTF* cf);
+
+	UFUNCTION(NetMulticast, Unreliable, WithValidation)
+		void ControlFlagMulticast(ABattleMobaCTF* cf, FName Team);
+
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -374,6 +415,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
 		void UpdateHUD();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
+		void CreateCPHUD();
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
 		void TowerReceiveDamage(ADestructibleTower* Tower, float DamageApply);
@@ -387,4 +431,9 @@ public:
 
 	UFUNCTION(NetMulticast, Unreliable, WithValidation)
 		void SafeZoneMulticast(ABMobaTriggerCapsule* TriggerZone);
+
+	/***********************CONTROL FLAG MODE*****************************/
+
+	void ControlFlagMode(ABattleMobaCTF* cf);
+
 };

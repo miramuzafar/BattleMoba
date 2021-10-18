@@ -7,6 +7,9 @@
 #include "Components/TextBlock.h"
 #include "Components/WidgetComponent.h"
 #include "TimerManager.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/SphereComponent.h"
 
 /////////////////////////////////
 #include "BattleMobaCharacter.h"
@@ -40,7 +43,6 @@ ABMobaTriggerCapsule::ABMobaTriggerCapsule()
 
 	W_Val->SetWidgetSpace(EWidgetSpace::Screen);
 	W_Val->SetDrawAtDesiredSize(true);
-	//W_DamageOutput->SetVisibility(false);
 	W_Val->SetGenerateOverlapEvents(false);
 }
 
@@ -75,6 +77,7 @@ void ABMobaTriggerCapsule::OnOverlapBegin(AActor* OverlappedActor, AActor* Other
 	if (OtherActor && (OtherActor != this))
 	{
 		ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(OtherActor);
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Overlapping %s"), *UKismetSystemLibrary::GetDisplayName(OtherActor)));
 		if (pc)
 		{
 			pc->SafeZone(this);
