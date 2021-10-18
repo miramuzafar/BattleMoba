@@ -1099,8 +1099,6 @@ void ABattleMobaCharacter::ControlFlagMode(ABattleMobaCTF * cf)
 	
 }
 
-
-
 bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF * cf)
 {
 	return true;
@@ -1303,14 +1301,14 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 				else if (SelectedRow.UseSection)
 				{
-					/*if (this->IsLocallyControlled())
+					if (this->IsLocallyControlled())
 					{
 						if (test == true)
 						{
 							RotateToTargetSetup();
 						}
 					}
-					*/
+					
 					
 					if (AnimInsta->Montage_IsPlaying(SelectedRow.SkillMoveset))
 					{
