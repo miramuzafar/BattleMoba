@@ -1165,12 +1165,18 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target)
 {
 	if (IsValid(Target))
 	{
+		FLatentActionInfo LatentInfo = FLatentActionInfo();
+		LatentInfo.CallbackTarget = this;
+
 		FRotator LookRotation = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), Target->GetActorLocation());
 		FRotator RotateTo = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, LookRotation.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
-		FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), RotateTo, this->GetWorld()->GetDeltaSeconds(), 100.0f);
+		//FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), RotateTo, this->GetWorld()->GetDeltaSeconds(), 100.0f);
 
-		this->SetActorRotation(RotateTo);
+		//this->SetActorRotation(RotateTo);
+		UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), this->GetCapsuleComponent()->GetComponentLocation(), RotateTo, true, true, 0.0f, true, EMoveComponentAction::Type::Move, LatentInfo);
 		closestActor = nullptr;
+
+
 	}
 }
 
