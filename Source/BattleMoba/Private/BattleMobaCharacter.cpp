@@ -775,7 +775,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 								TargetHead = row->TargetIsHead;
 								if (this->IsLocallyControlled())
 								{
-									//DetectNearestTarget();
+									DetectNearestTarget();
 									AttackSection = "NormalAttack01";
 									//play the animation that visible to all clients
 									ServerExecuteAction(*row, CurrentSection, AttackSection, true);
