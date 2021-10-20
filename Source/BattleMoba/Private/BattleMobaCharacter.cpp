@@ -1090,11 +1090,11 @@ void ABattleMobaCharacter::DetectNearestTarget_Implementation()
 	//TArray< TEnumAsByte<EObjectTypeQuery> > ObjectTypes;
 	//ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
 
-	//		draw a purple collision sphere for 2 seconds
-	DrawDebugSphere(GetWorld(), GetActorLocation(), SphereCol.GetSphereRadius(), 50, FColor::Purple, true, 2.0f);
-
 	//		check if something got hit in the sweep
 	bool isHit = GetWorld()->SweepMultiByChannel(hitResults, Start, End, FQuat::Identity, ECC_PhysicsBody, SphereCol, TraceParams);
+
+	//		draw a purple collision sphere for 0.5 seconds
+	DrawDebugSphere(GetWorld(), GetActorLocation(), SphereCol.GetSphereRadius(), 8, FColor::Purple, false, 0.5);
 
 	//bool isHit = UKismetSystemLibrary::SphereTraceMultiForObjects(GetWorld(), Start, End, RotateRadius, ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResults, true);
 	if (isHit)
@@ -1164,12 +1164,18 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target)
 {
 	if (IsValid(Target))
 	{
+		FLatentActionInfo LatentInfo = FLatentActionInfo();
+		LatentInfo.CallbackTarget = this;
+
 		FRotator LookRotation = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), Target->GetActorLocation());
 		FRotator RotateTo = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, LookRotation.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
-		FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), RotateTo, this->GetWorld()->GetDeltaSeconds(), 100.0f);
+		//FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), RotateTo, this->GetWorld()->GetDeltaSeconds(), 100.0f);
 
-		this->SetActorRotation(RotateTo);
+		//this->SetActorRotation(RotateTo);
+		UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), this->GetCapsuleComponent()->GetComponentLocation(), RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
 		closestActor = nullptr;
+
+
 	}
 }
 
