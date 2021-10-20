@@ -49,7 +49,7 @@ ADestructibleTower::ADestructibleTower()
 	isDestroyed = false;
 	isTriggerEnabled = false;
 
-	MaxHealth = 500.0f;
+	MaxHealth = 5000.0f;
 	DamageValue = 40.0f;
 	ImpulseValue = 50.0f;
 	CurrentHealth = MaxHealth;

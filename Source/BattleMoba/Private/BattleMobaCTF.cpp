@@ -75,7 +75,7 @@ void ABattleMobaCTF::BeginPlay()
 	//		Find all actors of class ONCE for GoldTimerFunction
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABattleMobaCharacter::StaticClass(), GiveGoldActors);
 
-	//		Run GoldTimerFunction every 1 second after 50 seconds the game has started
+	//		Run GoldTimerFunction every 1 second after 20 seconds the game has started
 	this->GetWorldTimerManager().SetTimer(GoldTimer, this, &ABattleMobaCTF::GoldTimerFunction, 1.0f, true, 20.0f);
 }
 

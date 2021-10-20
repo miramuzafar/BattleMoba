@@ -282,8 +282,20 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FName ActiveSocket;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Status")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "ControlFlag")
 		FName CTFteam = "";
+
+	UPROPERTY(VisibleAnywhere, Category = "Rotate")
+		float RotateRadius = 100.0f;
+
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "Rotate")
+		class AActor* closestActor;
+
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "Rotate")
+		class ABattleMobaCharacter* RotateToActor;
+
+	UPROPERTY(VisibleAnywhere, Category = "Rotate")
+		TArray<class AActor*> IgnoreActors;
 
 protected:
 	// APawn interface
@@ -406,6 +418,12 @@ protected:
 
 	UFUNCTION(NetMulticast, Unreliable, WithValidation)
 		void ControlFlagMulticast(ABattleMobaCTF* cf, FName Team);
+
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "ActionSkill")
+		void DetectNearestTarget();
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "ActionSkill")
+		void RotateNearestTarget(AActor* Target);
 
 public:
 	/** Returns CameraBoom subobject **/

@@ -61,6 +61,8 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, CTFteam);
 	DOREPLIFETIME(ABattleMobaCharacter, CTFentering);
 	DOREPLIFETIME(ABattleMobaCharacter, ActorsToGetGold);
+	DOREPLIFETIME(ABattleMobaCharacter, closestActor);
+	DOREPLIFETIME(ABattleMobaCharacter, RotateToActor);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -351,55 +353,55 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 		}
 	}
 
-	if (currentTarget != nullptr && Rotate == true && test == true)
-	{
-		if (HasAuthority())
-		{
-			if (this->IsLocallyControlled())
-			{
-				FRotator RotatorVal = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), currentTarget->GetActorLocation());
-				FRotator FinalVal = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, RotatorVal.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
-				FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, DeltaTime, 40.0f);
-				this->SetActorRotation(FinalVal);
-				RotateToCameraView(FinalVal);
-				//this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
-				//
-				//Set rotate to false
-				/*FTimerHandle handle;
-				FTimerDelegate TimerDelegate;
-				TimerDelegate.BindLambda([this]()
-				{
-					Rotate = false;
-					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
-				});
-				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);*/
-			}
-		}
-		else
-		{
-			if (this->GetController() != nullptr)
-			{
-				/*ServerRotateToCameraView(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
-				this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));*/
-				FRotator RotatorVal = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), currentTarget->GetActorLocation());
-				FRotator FinalVal = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, RotatorVal.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
-				FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, DeltaTime, 40.0f);
-				ServerRotateToCameraView(FinalVal);
-				this->SetActorRotation(FinalVal);
+	//if (currentTarget != nullptr && Rotate == true && test == true)
+	//{
+	//	if (HasAuthority())
+	//	{
+	//		if (this->IsLocallyControlled())
+	//		{
+	//			FRotator RotatorVal = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), currentTarget->GetActorLocation());
+	//			FRotator FinalVal = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, RotatorVal.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
+	//			FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, DeltaTime, 40.0f);
+	//			this->SetActorRotation(FinalVal);
+	//			RotateToCameraView(FinalVal);
+	//			//this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
+	//			//
+	//			//Set rotate to false
+	//			/*FTimerHandle handle;
+	//			FTimerDelegate TimerDelegate;
+	//			TimerDelegate.BindLambda([this]()
+	//			{
+	//				Rotate = false;
+	//				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+	//			});
+	//			this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);*/
+	//		}
+	//	}
+	//	else
+	//	{
+	//		if (this->GetController() != nullptr)
+	//		{
+	//			/*ServerRotateToCameraView(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
+	//			this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));*/
+	//			FRotator RotatorVal = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), currentTarget->GetActorLocation());
+	//			FRotator FinalVal = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, RotatorVal.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
+	//			FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, DeltaTime, 40.0f);
+	//			ServerRotateToCameraView(FinalVal);
+	//			this->SetActorRotation(FinalVal);
 
-				//Set rotate to false
-				/*FTimerHandle handle;
-				FTimerDelegate TimerDelegate;
-				TimerDelegate.BindLambda([this]()
-				{
-					Rotate = false;
-					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
-				});
-				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
-				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));*/
-			}
-		}
-	}
+	//			//Set rotate to false
+	//			/*FTimerHandle handle;
+	//			FTimerDelegate TimerDelegate;
+	//			TimerDelegate.BindLambda([this]()
+	//			{
+	//				Rotate = false;
+	//				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+	//			});
+	//			this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
+	//			GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));*/
+	//		}
+	//	}
+	//}
 }
 
 bool ABattleMobaCharacter::ServerRotateToCameraView_Validate(FRotator InRot)
@@ -758,6 +760,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 								TargetHead = row->TargetIsHead;
 								if (this->IsLocallyControlled())
 								{
+									DetectNearestTarget();
 									AttackSection = "NormalAttack01";
 									//play the animation that visible to all clients
 									ServerExecuteAction(*row, CurrentSection, AttackSection, true);
@@ -833,7 +836,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 						if (row->SkillMoveset != nullptr)
 						{
 							TargetHead = row->TargetIsHead;
-
+							DetectNearestTarget();
 							AttackCombo(*row);
 							break;
 
@@ -1046,6 +1049,116 @@ void ABattleMobaCharacter::EnableMovementMode()
 	}
 }
 
+bool ABattleMobaCharacter::DetectNearestTarget_Validate()
+{
+	return true;
+}
+
+void ABattleMobaCharacter::DetectNearestTarget_Implementation()
+{
+	//		create tarray for hit results
+	TArray<FHitResult> hitResults;
+
+	//		start and end locations
+	FVector Start = this->GetActorLocation();
+	FVector End = FVector(this->GetActorLocation().X + 0.1f, this->GetActorLocation().Y + 0.1f, this->GetActorLocation().Z + 0.1f);
+
+	//		create a collision sphere with radius of RotateRadius
+	FCollisionShape SphereCol = FCollisionShape::MakeSphere(RotateRadius);
+
+	FCollisionQueryParams TraceParams;
+	TraceParams.AddIgnoredActor(this);
+
+	float Distance1;
+	float Distance2;
+
+	//TArray< TEnumAsByte<EObjectTypeQuery> > ObjectTypes;
+	//ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
+
+	//		draw a purple collision sphere for 2 seconds
+	DrawDebugSphere(GetWorld(), GetActorLocation(), SphereCol.GetSphereRadius(), 50, FColor::Purple, true, 2.0f);
+
+	//		check if something got hit in the sweep
+	bool isHit = GetWorld()->SweepMultiByChannel(hitResults, Start, End, FQuat::Identity, ECC_PhysicsBody, SphereCol, TraceParams);
+
+	//bool isHit = UKismetSystemLibrary::SphereTraceMultiForObjects(GetWorld(), Start, End, RotateRadius, ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResults, true);
+	if (isHit)
+	{
+		for (auto& Hit : hitResults)
+		{
+			ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(Hit.Actor);
+			ADestructibleTower* tower = Cast<ADestructibleTower>(Hit.Actor);
+
+			if (pc != nullptr)
+			{
+				if (pc->InRagdoll == false && pc->TeamName != this->TeamName)
+				{
+					//		check current closestActor is still the closest or change to new one
+					if (IsValid(closestActor))
+					{
+						Distance1 = closestActor->GetDistanceTo(this);
+						Distance2 = Hit.Actor->GetDistanceTo(this);
+
+						if (Distance1 < Distance2)
+						{
+
+						}
+
+						//		if distance is larger or same set new closest actor
+						else
+						{
+							closestActor = Cast<AActor>(Hit.Actor);
+							GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Closest Actor: %s"), *closestActor->GetName()));
+
+						}
+					}
+
+					else
+					{
+						closestActor = Cast<AActor>(Hit.Actor);
+						GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Closest Actor: %s"), *closestActor->GetName()));
+					}
+				}
+			}
+
+			else if (tower != nullptr && pc == nullptr)
+			{
+				if (tower->TeamName != this->TeamName)
+				{
+					//		prioritise player, only then set closest actor to tower
+					if (IsValid(closestActor) == false)
+					{
+						closestActor = Cast<AActor>(Hit.Actor);
+					}
+					
+				}
+			}
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Result: %s"), *Hit.Actor->GetName()));
+		}
+		
+		RotateNearestTarget(closestActor);
+	}
+}
+
+bool ABattleMobaCharacter::RotateNearestTarget_Validate(AActor* Target)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target)
+{
+	if (IsValid(Target))
+	{
+		FRotator LookRotation = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), Target->GetActorLocation());
+		FRotator RotateTo = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, LookRotation.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
+		FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), RotateTo, this->GetWorld()->GetDeltaSeconds(), 100.0f);
+
+		this->SetActorRotation(RotateTo);
+		closestActor = nullptr;
+	}
+}
+
+
 void ABattleMobaCharacter::SafeZone(ABMobaTriggerCapsule* TriggerZone)
 {
 	if (IsLocallyControlled())
@@ -1247,10 +1360,10 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 			if (bSpecialAttack == true)
 			{
-				if (test == true)
+				/*if (test == true)
 				{
 					RotateToTargetSetup();
-				}
+				}*/
 
 				//if current montage consumes cooldown properties
 				if (SelectedRow.IsUsingCD)
@@ -1301,13 +1414,13 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 				else if (SelectedRow.UseSection)
 				{
-					if (this->IsLocallyControlled())
+					/*if (this->IsLocallyControlled())
 					{
 						if (test == true)
 						{
 							RotateToTargetSetup();
 						}
-					}
+					}*/
 					
 					
 					if (AnimInsta->Montage_IsPlaying(SelectedRow.SkillMoveset))
