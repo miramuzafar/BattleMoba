@@ -408,56 +408,6 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 	//	}
 	//}
 
-	if (currentTarget != nullptr && Rotate == true && test == true)
-	{
-		if (HasAuthority())
-		{
-			if (this->IsLocallyControlled())
-			{
-				FRotator RotatorVal = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), currentTarget->GetActorLocation());
-				FRotator FinalVal = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, RotatorVal.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
-				FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, DeltaTime, 40.0f);
-				this->SetActorRotation(FinalVal);
-				RotateToCameraView(FinalVal);
-				//this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
-				//
-				//Set rotate to false
-				/*FTimerHandle handle;
-				FTimerDelegate TimerDelegate;
-				TimerDelegate.BindLambda([this]()
-				{
-					Rotate = false;
-					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
-				});
-				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);*/
-			}
-		}
-		else
-		{
-			if (this->GetController() != nullptr)
-			{
-				/*ServerRotateToCameraView(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
-				this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));*/
-				FRotator RotatorVal = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), currentTarget->GetActorLocation());
-				FRotator FinalVal = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, RotatorVal.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
-				FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, DeltaTime, 40.0f);
-				ServerRotateToCameraView(FinalVal);
-				this->SetActorRotation(FinalVal);
-
-				//Set rotate to false
-				/*FTimerHandle handle;
-				FTimerDelegate TimerDelegate;
-				TimerDelegate.BindLambda([this]()
-				{
-					Rotate = false;
-					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
-				});
-				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
-				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));*/
-			}
-		}
-	}
-
 }
 
 bool ABattleMobaCharacter::ServerRotateToCameraView_Validate(FRotator InRot)
