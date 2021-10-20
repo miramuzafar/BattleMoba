@@ -69,7 +69,7 @@ void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 							//set view target
 							TimerDelegate.BindLambda([this, pc]()
 							{
-								this->SetViewTargetWithBlend(pc, 2.0f);
+								this->SetViewTargetWithBlend(pc, 2.0f, EViewTargetBlendFunction::VTBlend_Linear, 0.0f, true);
 								//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current player is %s"), ((*pstate->GetPawn()->GetFName().ToString()))));
 							});
 							this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.02f, false);
