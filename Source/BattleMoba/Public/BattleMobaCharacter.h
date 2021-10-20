@@ -11,6 +11,7 @@
 
 class ABMobaTriggerCapsule;
 struct FTimerHandle;
+class ABattleMobaCTF;
 
 UCLASS(config = Game)
 class ABattleMobaCharacter : public ACharacter
@@ -297,6 +298,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Rotate")
 		TArray<class AActor*> IgnoreActors;
 
+	UPROPERTY()
+	TArray<ABattleMobaCTF*> Towers;
+
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -330,6 +335,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "HUDSetup")
 	void SetupWidget();
+
+	UFUNCTION(BlueprintCallable, Category = "HUDSetup")
+	void HideHPBar();
 
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "CollisionSetup")

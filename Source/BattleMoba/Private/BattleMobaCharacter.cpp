@@ -259,6 +259,11 @@ void ABattleMobaCharacter::BeginPlay()
 		}
 	}
 
+	for (TActorIterator<ABattleMobaCTF> It(GetWorld()); It; ++It)
+	{
+		Towers.Add(*It);
+	}
+
 	CreateCPHUD();
 }
 
@@ -402,6 +407,57 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 	//		}
 	//	}
 	//}
+
+	if (currentTarget != nullptr && Rotate == true && test == true)
+	{
+		if (HasAuthority())
+		{
+			if (this->IsLocallyControlled())
+			{
+				FRotator RotatorVal = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), currentTarget->GetActorLocation());
+				FRotator FinalVal = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, RotatorVal.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
+				FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, DeltaTime, 40.0f);
+				this->SetActorRotation(FinalVal);
+				RotateToCameraView(FinalVal);
+				//this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
+				//
+				//Set rotate to false
+				/*FTimerHandle handle;
+				FTimerDelegate TimerDelegate;
+				TimerDelegate.BindLambda([this]()
+				{
+					Rotate = false;
+					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+				});
+				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);*/
+			}
+		}
+		else
+		{
+			if (this->GetController() != nullptr)
+			{
+				/*ServerRotateToCameraView(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));
+				this->SetActorRotation(FRotator(this->GetActorRotation().Pitch, this->GetControlRotation().Yaw, this->GetActorRotation().Roll));*/
+				FRotator RotatorVal = UKismetMathLibrary::FindLookAtRotation(this->GetCapsuleComponent()->GetComponentLocation(), currentTarget->GetActorLocation());
+				FRotator FinalVal = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, RotatorVal.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
+				FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), FinalVal, DeltaTime, 40.0f);
+				ServerRotateToCameraView(FinalVal);
+				this->SetActorRotation(FinalVal);
+
+				//Set rotate to false
+				/*FTimerHandle handle;
+				FTimerDelegate TimerDelegate;
+				TimerDelegate.BindLambda([this]()
+				{
+					Rotate = false;
+					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+				});
+				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
+				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));*/
+			}
+		}
+	}
+
 }
 
 bool ABattleMobaCharacter::ServerRotateToCameraView_Validate(FRotator InRot)
@@ -466,6 +522,29 @@ void ABattleMobaCharacter::SetupWidget()
 	//Setup3DWidgetVisibility();
 }
 
+void ABattleMobaCharacter::HideHPBar()
+{
+	if (WithinVicinity)
+	{
+		UInputLibrary::SetUIVisibility(W_DamageOutput, this);
+		/*FHitResult Hit(ForceInit);
+
+		FVector start = this->GetActorLocation();
+		FVector End = UGameplayStatics::GetPlayerCameraManager(this, 0)->GetCameraLocation();
+		FCollisionQueryParams CollisionParams;
+		CollisionParams.AddIgnoredActor(this);
+
+		if (GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams))
+		{
+			W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+		}
+		else
+		{
+			W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
+		}*/
+	}
+}
+
 bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection)
 {
 	return true;
@@ -517,6 +596,7 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					//	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Team A : %d, Team B : %d"), gs->TeamKillA, gs->TeamKillB));
 					//}
 					Temp = 0.0f;
+					this->WithinVicinity = false;
 
 					//ps->Death += 1;
 

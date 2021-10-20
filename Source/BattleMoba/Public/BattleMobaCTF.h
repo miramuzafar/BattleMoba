@@ -42,6 +42,8 @@ protected:
 
 public:
 
+	float LastOnScreenTime = 0.01f;
+
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Val, BlueprintReadWrite, Category = "Status")
 		float valRadiant = 0.0f;
 
@@ -82,7 +84,6 @@ public:
 		FTimerHandle FlagTimer;
 
 	void TimerFunction();
-
 
 	UPROPERTY(Replicated)
 		FTimerHandle GoldTimer;

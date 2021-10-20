@@ -7,6 +7,8 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "InputLibrary.generated.h"
 
+class UWidgetComponent;
+
 USTRUCT(BlueprintType)
 struct FActionSkill : public FTableRowBase
 {
@@ -134,4 +136,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Sorting Functions")    // Sort actors by distance from target actor    
 		static void  Distance_Sort(UPARAM() TArray <AActor*> Array_To_Sort, UPARAM()AActor* From_Actor, bool Descending, TArray <FActor_Dist> &Sorted_Array);
+
+	UFUNCTION(BlueprintCallable, Category = "Displays") //Hide 3D widget behind building etc
+		static void SetUIVisibility(UWidgetComponent* widget, AActor* FromActor);
 };

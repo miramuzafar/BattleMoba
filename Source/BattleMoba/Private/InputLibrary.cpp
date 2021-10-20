@@ -2,8 +2,10 @@
 
 
 #include "InputLibrary.h"
+#include "Engine.h"
 #include "Math/UnrealMathUtility.h"
 #include "Kismet/KismetTextLibrary.h"
+#include "Components/WidgetComponent.h"
 
 FDateTime UInputLibrary::GetCurrentDateAndTime()
 {
@@ -118,4 +120,26 @@ void UInputLibrary::Distance_Sort(UPARAM()TArray<AActor*> Array_To_Sort, UPARAM(
 	}
 	else																// if no elements in array exit function 
 		;
+}
+
+void UInputLibrary::SetUIVisibility(UWidgetComponent* widget, AActor* FromActor)
+{
+	FHitResult Hit(ForceInit);
+
+	if (UGameplayStatics::GetPlayerCameraManager(FromActor, 0))
+	{
+		FVector start = FromActor->GetActorLocation();
+		FVector End = UGameplayStatics::GetPlayerCameraManager(FromActor, 0)->GetCameraLocation();
+		FCollisionQueryParams CollisionParams;
+		CollisionParams.AddIgnoredActor(FromActor);
+
+		if (FromActor->GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams))
+		{
+			widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+		}
+		else
+		{
+			widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
+		}
+	}
 }
