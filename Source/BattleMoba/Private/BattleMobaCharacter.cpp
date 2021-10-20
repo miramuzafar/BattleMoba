@@ -257,6 +257,11 @@ void ABattleMobaCharacter::BeginPlay()
 		}
 	}
 
+	for (TActorIterator<ABattleMobaCTF> It(GetWorld()); It; ++It)
+	{
+		Towers.Add(*It);
+	}
+
 	CreateCPHUD();
 }
 
@@ -331,25 +336,6 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 void ABattleMobaCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	if (WithinVicinity)
-	{
-		FHitResult Hit(ForceInit);
-
-		FVector start = this->GetActorLocation();
-		FVector End = UGameplayStatics::GetPlayerCameraManager(this, 0)->GetCameraLocation();
-		FCollisionQueryParams CollisionParams;
-		CollisionParams.AddIgnoredActor(this);
-
-		if (GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams))
-		{
-			W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
-		}
-		else
-		{
-			W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
-		}
-	}
 
 	if (currentTarget != nullptr && Rotate == true && test == true)
 	{
@@ -464,6 +450,29 @@ void ABattleMobaCharacter::SetupWidget()
 	//Setup3DWidgetVisibility();
 }
 
+void ABattleMobaCharacter::HideHPBar()
+{
+	if (WithinVicinity)
+	{
+		UInputLibrary::SetUIVisibility(W_DamageOutput, this);
+		/*FHitResult Hit(ForceInit);
+
+		FVector start = this->GetActorLocation();
+		FVector End = UGameplayStatics::GetPlayerCameraManager(this, 0)->GetCameraLocation();
+		FCollisionQueryParams CollisionParams;
+		CollisionParams.AddIgnoredActor(this);
+
+		if (GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams))
+		{
+			W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+		}
+		else
+		{
+			W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
+		}*/
+	}
+}
+
 bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection)
 {
 	return true;
@@ -515,6 +524,7 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					//	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Team A : %d, Team B : %d"), gs->TeamKillA, gs->TeamKillB));
 					//}
 					Temp = 0.0f;
+					this->WithinVicinity = false;
 
 					//ps->Death += 1;
 
