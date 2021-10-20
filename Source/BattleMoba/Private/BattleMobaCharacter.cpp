@@ -341,21 +341,7 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 
 	if (WithinVicinity)
 	{
-		FHitResult Hit(ForceInit);
-
-		FVector start = this->GetActorLocation();
-		FVector End = UGameplayStatics::GetPlayerCameraManager(this, 0)->GetCameraLocation();
-		FCollisionQueryParams CollisionParams;
-		CollisionParams.AddIgnoredActor(this);
-
-		if (GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams))
-		{
-			W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
-		}
-		else
-		{
-			W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
-		}
+		UInputLibrary::SetUIVisibility(W_DamageOutput, this);
 	}
 
 	//if (currentTarget != nullptr && Rotate == true && test == true)
