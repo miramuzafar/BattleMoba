@@ -1767,92 +1767,92 @@ void ABattleMobaCharacter::MoveRight(float Value)
 //Check for overlapped enemy unit
 void ABattleMobaCharacter::OnBeginOverlap(UPrimitiveComponent* OverlappedActor, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor != this)
-	{
-		ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(OtherActor);
-		ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(OtherActor);
-		if ((EnemyChar != nullptr && EnemyChar->Health >=0.0f && EnemyChar->TeamName != this->TeamName))
-		{
-			//FoundActors.AddUnique(OtherActor);
-			this->test = true;
-			//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Distance: %f"), this->GetHorizontalDistanceTo(EnemyChar)));
-		}
-		else if (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName)
-		{
-			this->test = true;
-		}
-	}
+	//if (OtherActor != this)
+	//{
+	//	ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(OtherActor);
+	//	ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(OtherActor);
+	//	if ((EnemyChar != nullptr && EnemyChar->Health >=0.0f && EnemyChar->TeamName != this->TeamName))
+	//	{
+	//		//FoundActors.AddUnique(OtherActor);
+	//		this->test = true;
+	//		//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Distance: %f"), this->GetHorizontalDistanceTo(EnemyChar)));
+	//	}
+	//	else if (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName)
+	//	{
+	//		this->test = true;
+	//	}
+	//}
 }
 
 void ABattleMobaCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedActor, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (OtherActor != this)
-	{
-		//this->test = false;
-		ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(OtherActor);
-		ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(OtherActor);
-		if ((EnemyChar != nullptr && EnemyChar->Health >= 0.0f && EnemyChar->TeamName != this->TeamName) || (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName))
-		{
-			if (this->GetHorizontalDistanceTo(EnemyChar) > ViewDistanceCol->GetScaledSphereRadius())
-			{
-				this->test = false;
-				//FoundActors.Remove(EnemyChar);
-				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Removed")));
-			}
-			else if (this->GetHorizontalDistanceTo(EnemyTow) > ViewDistanceCol->GetScaledSphereRadius())
-			{
-				this->test = false;
-				//FoundActors.Remove(EnemyChar);
-				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Removed")));
-			}
-		}
-	}
+	//if (OtherActor != this)
+	//{
+	//	//this->test = false;
+	//	ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(OtherActor);
+	//	ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(OtherActor);
+	//	if ((EnemyChar != nullptr && EnemyChar->Health >= 0.0f && EnemyChar->TeamName != this->TeamName) || (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName))
+	//	{
+	//		if (this->GetHorizontalDistanceTo(EnemyChar) > ViewDistanceCol->GetScaledSphereRadius())
+	//		{
+	//			this->test = false;
+	//			//FoundActors.Remove(EnemyChar);
+	//			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Removed")));
+	//		}
+	//		else if (this->GetHorizontalDistanceTo(EnemyTow) > ViewDistanceCol->GetScaledSphereRadius())
+	//		{
+	//			this->test = false;
+	//			//FoundActors.Remove(EnemyChar);
+	//			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Removed")));
+	//		}
+	//	}
+	//}
 }
 
 void ABattleMobaCharacter::RotateToTargetSetup()
 {
-	//Distance actor struct
-	TArray<FActor_Dist> distcollection;
+	////Distance actor struct
+	//TArray<FActor_Dist> distcollection;
 
-	//Check for eligible character actors
-	for (auto& name : UGameplayStatics::GetGameState(GetWorld())->PlayerArray)
-	{
-		if (name->GetPawn() != nullptr && name->GetPawn()->IsActorBeingDestroyed() == false)
-		{
-			ABattleMobaCharacter* enemy = Cast<ABattleMobaCharacter>(name->GetPawn());
-			if (enemy != this && enemy->TeamName != this->TeamName)
-			{
-				FoundActors.AddUnique(enemy);
-			}
-		}
-	}
-	//Check for tower actors
-	for (TActorIterator<ADestructibleTower> It(GetWorld()); It; ++It)
-	{
-		ADestructibleTower* currentTower = *It;
-		if (currentTower->TeamName != this->TeamName)
-		{
-			FoundActors.AddUnique(currentTower);
-		}
-	}
+	////Check for eligible character actors
+	//for (auto& name : UGameplayStatics::GetGameState(GetWorld())->PlayerArray)
+	//{
+	//	if (name->GetPawn() != nullptr && name->GetPawn()->IsActorBeingDestroyed() == false)
+	//	{
+	//		ABattleMobaCharacter* enemy = Cast<ABattleMobaCharacter>(name->GetPawn());
+	//		if (enemy != this && enemy->TeamName != this->TeamName)
+	//		{
+	//			FoundActors.AddUnique(enemy);
+	//		}
+	//	}
+	//}
+	////Check for tower actors
+	//for (TActorIterator<ADestructibleTower> It(GetWorld()); It; ++It)
+	//{
+	//	ADestructibleTower* currentTower = *It;
+	//	if (currentTower->TeamName != this->TeamName)
+	//	{
+	//		FoundActors.AddUnique(currentTower);
+	//	}
+	//}
 
-	//Look for closest target from an actor
-	UInputLibrary::Distance_Sort(FoundActors, this, false, distcollection);
+	////Look for closest target from an actor
+	//UInputLibrary::Distance_Sort(FoundActors, this, false, distcollection);
 
-	ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(distcollection[0].actor);
-	ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(distcollection[0].actor);
-	if (EnemyChar || EnemyTow)
-	{
-		//set new closest actor to target
-		currentTarget = distcollection[0].actor;
-		Rotate = true;
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is close")));
-	}
-	else
-	{
-		Rotate = false;
-		currentTarget = NULL;
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is not close")));
-	}
+	//ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(distcollection[0].actor);
+	//ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(distcollection[0].actor);
+	//if (EnemyChar || EnemyTow)
+	//{
+	//	//set new closest actor to target
+	//	currentTarget = distcollection[0].actor;
+	//	Rotate = true;
+	//	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is close")));
+	//}
+	//else
+	//{
+	//	Rotate = false;
+	//	currentTarget = NULL;
+	//	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is not close")));
+	//}
 }
 
