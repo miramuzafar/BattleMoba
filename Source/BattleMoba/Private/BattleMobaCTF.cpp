@@ -7,6 +7,7 @@
 #include "Components/SphereComponent.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
 #include "Components/WidgetComponent.h"
 #include "TimerManager.h"
 #include "Styling/SlateColor.h"
@@ -88,6 +89,31 @@ void ABattleMobaCTF::OnOverlapBegin(AActor * OverlappedActor, AActor * OtherActo
 		{
 			//		set CTFentering to true to add integer of a team in the sphere
 			pb->CTFentering = true;
+
+			//UUserWidget* HPWidget = Cast<UUserWidget>(W_ValControl->GetUserWidgetObject());
+			//if (HPWidget)
+			//{
+			//	const FName hpbar = FName(TEXT("PBar"));
+			//	UProgressBar* PBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
+
+			//	if (PBar)
+			//	{
+			//		//FSlateBrush newBrush;
+			//		if (pb->IsLocallyControlled())
+			//		{
+			//			if (PBar->Percent <= 0.0f)
+			//			{
+			//				PBar->SetFillColorAndOpacity(FLinearColor(0.0f, 0.0f, 1.0f));
+			//			}
+			//		}
+			//		else
+			//		{
+			//			PBar->SetFillColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
+			//			//newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
+			//		}
+			//		//PBar->WidgetStyle.SetBackgroundImage(newBrush);
+			//	}
+			//}
 		}
 		
 	}
@@ -108,15 +134,14 @@ void ABattleMobaCTF::OnOverlapEnd(AActor * OverlappedActor, AActor * OtherActor)
 
 void ABattleMobaCTF::OnRep_Val()
 {
-	
 	UUserWidget* HPWidget = Cast<UUserWidget>(W_ValControl->GetUserWidgetObject());
 	if (HPWidget)
 	{
 		const FName hptext = FName(TEXT("ValText"));
 		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
 
-		/*const FName hpbar = FName(TEXT("HPBar"));
-		UProgressBar* HealthBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));*/
+		const FName hpbar = FName(TEXT("PBar"));
+		UProgressBar* PBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
 
 		if (HealthText)
 		{
@@ -124,25 +149,44 @@ void ABattleMobaCTF::OnRep_Val()
 			{
 				FString TheFloatStr = FString::SanitizeFloat(this->valRadiant);
 				HealthText->SetText(FText::FromString(TheFloatStr));
-				HealthText->SetColorAndOpacity(FLinearColor(0.0f, 0.0f, 1.0f));
+				PBar->SetPercent(FMath::Clamp(this->valRadiant / 100.0f, 0.0f, 1.0f));
+
+				/*if (HasAuthority())
+				{
+					FSlateBrush newBrush;
+					newBrush.TintColor = FLinearColor(0.0f, 0.0f, 1.0f);
+					PBar->WidgetStyle.SetBackgroundImage(newBrush);
+				}
+				else
+				{
+					FSlateBrush newBrush;
+					newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
+					PBar->WidgetStyle.SetBackgroundImage(newBrush);
+				}*/
 			}
 
 			else if (this->valRadiant <= 0 && this->valDire > 0)
 			{
 				FString TheFloatStr = FString::SanitizeFloat(this->valDire);
 				HealthText->SetText(FText::FromString(TheFloatStr));
-				HealthText->SetColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
+				PBar->SetPercent(FMath::Clamp(this->valDire / 100.0f, 0.0f, 1.0f));
+
+				/*FSlateBrush newBrush;
+				newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
+				PBar->WidgetStyle.SetBackgroundImage(newBrush);*/
 			}
 			
 			else
 			{
 				FString TheFloatStr = FString::SanitizeFloat(0.0f);
 				HealthText->SetText(FText::FromString(TheFloatStr));
-				HealthText->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
-			}
+				//HealthText->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
+				PBar->SetPercent(FMath::Clamp(0.0f / 100.0f, 0.0f, 1.0f));
 
-			
-			//HealthBar->SetPercent(FMath::Clamp(this->Health / 100.0f, 0.0f, 1.0f));
+				/*FSlateBrush newBrush;
+				newBrush.TintColor = FLinearColor(0.0f, 0.0f, 0.0f);
+				PBar->WidgetStyle.SetBackgroundImage(newBrush);*/
+			}
 		}
 	}
 }
