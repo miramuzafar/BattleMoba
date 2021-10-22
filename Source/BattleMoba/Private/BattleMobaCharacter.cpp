@@ -347,7 +347,7 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 		UInputLibrary::SetUIVisibility(W_DamageOutput, this);
 	}
 
-	//if (currentTarget != nullptr && Rotate == true && test == true)
+	//if (currentTarget != nullptr && Rotate == true)
 	//{
 	//	if (HasAuthority())
 	//	{
@@ -396,7 +396,6 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 	//		}
 	//	}
 	//}
-
 }
 
 bool ABattleMobaCharacter::ServerRotateToCameraView_Validate(FRotator InRot)
@@ -1229,20 +1228,56 @@ void ABattleMobaCharacter::SafeZoneMulticast_Implementation(ABMobaTriggerCapsule
 
 void ABattleMobaCharacter::ControlFlagMode(ABattleMobaCTF * cf)
 {
-	if (this->IsLocallyControlled())
+	UUserWidget* HPWidget = Cast<UUserWidget>(cf->W_ValControl->GetUserWidgetObject());
+	if (HPWidget)
 	{
-		//Run server Control Flag
-		ControlFlagServer(cf);
+		const FName hpbar = FName(TEXT("PBar"));
+		UProgressBar* PBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
+
+		const FName hptext = FName(TEXT("ValText"));
+		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
+
+		if (PBar)
+		{
+			//FSlateBrush newBrush;
+			if (this->IsLocallyControlled())
+			{
+				//Change to progressbar color to blue
+				if (PBar->Percent <= 0.0f)
+				{
+					PBar->SetFillColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+					if (HealthText)
+					{
+						HealthText->SetColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+					}
+				}
+				//Run server Control Flag
+				ControlFlagServer(cf);
+			}
+			else
+			{
+				if (PBar->Percent <= 0.0f)
+				{
+					//Change progressbar color to red
+					PBar->SetFillColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
+					if (HealthText)
+					{
+						HealthText->SetColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
+					}
+					//newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
+				}
+			}
+			//PBar->WidgetStyle.SetBackgroundImage(newBrush);
+		}
 	}
-	
 }
 
-bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF * cf)
+bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF* cf)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF * cf)
+void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF* cf)
 {
 	if (cf->RadiantControl > 0 && cf->DireControl == 0)
 	{
@@ -1439,13 +1474,15 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 				else if (SelectedRow.UseSection)
 				{
-					/*if (this->IsLocallyControlled())
+					if (this->IsLocallyControlled())
 					{
-						if (test == true)
+						/*FoundActors.Empty();
+						RotateToTargetSetup();*/
+						/*if (test == true)
 						{
 							RotateToTargetSetup();
-						}
-					}*/
+						}*/
+					}
 					
 					
 					if (AnimInsta->Montage_IsPlaying(SelectedRow.SkillMoveset))
@@ -1453,9 +1490,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 						if (ActiveSection != MontageSection)
 						{
 							AnimInsta->Montage_SetNextSection(ActiveSection, MontageSection, SelectedRow.SkillMoveset);
-							
 						}
-						
 					}
 
 					else
@@ -1856,18 +1891,23 @@ void ABattleMobaCharacter::RotateToTargetSetup()
 
 	ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(distcollection[0].actor);
 	ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(distcollection[0].actor);
-	if (EnemyChar || EnemyTow)
+	if (distcollection[0].distance <= 200.0f)
 	{
-		//set new closest actor to target
-		currentTarget = distcollection[0].actor;
-		Rotate = true;
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is close")));
-	}
-	else
-	{
-		Rotate = false;
-		currentTarget = NULL;
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is not close")));
+		if (EnemyChar || EnemyTow)
+		{
+			//set new closest actor to target
+			currentTarget = distcollection[0].actor;
+			FoundActors.Empty();
+			Rotate = true;
+			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is close")));
+		}
+		else
+		{
+			Rotate = false;
+			FoundActors.Empty();
+			currentTarget = NULL;
+			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is not close")));
+		}
 	}
 }
 
