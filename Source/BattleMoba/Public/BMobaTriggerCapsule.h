@@ -36,8 +36,6 @@ public:
 	UPROPERTY(Replicated)
 		FTimerHandle FlagTimer;
 
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "OwningTeam")
-		FName TeamName;
 
 protected:
 

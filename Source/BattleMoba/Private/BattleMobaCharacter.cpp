@@ -236,9 +236,6 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ABattleMobaCharacter::OnResetVR);
-
-	//	Camera Shake test input
-	PlayerInputComponent->BindAction("TestCam", IE_Released, this, &ABattleMobaCharacter::OnCameraShake);
 }
 
 void ABattleMobaCharacter::BeginPlay()
@@ -854,7 +851,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 						if (row->SkillMoveset != nullptr)
 						{
 							TargetHead = row->TargetIsHead;
-							DetectNearestTarget();
+							//DetectNearestTarget();
 							AttackCombo(*row);
 							break;
 
@@ -1228,56 +1225,20 @@ void ABattleMobaCharacter::SafeZoneMulticast_Implementation(ABMobaTriggerCapsule
 
 void ABattleMobaCharacter::ControlFlagMode(ABattleMobaCTF * cf)
 {
-	UUserWidget* HPWidget = Cast<UUserWidget>(cf->W_ValControl->GetUserWidgetObject());
-	if (HPWidget)
+	if (this->IsLocallyControlled())
 	{
-		const FName hpbar = FName(TEXT("PBar"));
-		UProgressBar* PBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
-
-		const FName hptext = FName(TEXT("ValText"));
-		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
-
-		if (PBar)
-		{
-			//FSlateBrush newBrush;
-			if (this->IsLocallyControlled())
-			{
-				//Change to progressbar color to blue
-				if (PBar->Percent <= 0.0f)
-				{
-					PBar->SetFillColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
-					if (HealthText)
-					{
-						HealthText->SetColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
-					}
-				}
-				//Run server Control Flag
-				ControlFlagServer(cf);
-			}
-			else
-			{
-				if (PBar->Percent <= 0.0f)
-				{
-					//Change progressbar color to red
-					PBar->SetFillColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
-					if (HealthText)
-					{
-						HealthText->SetColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
-					}
-					//newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
-				}
-			}
-			//PBar->WidgetStyle.SetBackgroundImage(newBrush);
-		}
+		//Run server Control Flag
+		ControlFlagServer(cf);
 	}
+	
 }
 
-bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF* cf)
+bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF * cf)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF* cf)
+void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF * cf)
 {
 	if (cf->RadiantControl > 0 && cf->DireControl == 0)
 	{
@@ -1692,12 +1653,6 @@ void ABattleMobaCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector L
 void ABattleMobaCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
 	StopJumping();
-}
-
-void ABattleMobaCharacter::OnCameraShake()
-{
-	CombatCamShake();
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Calling Camera Shake Function")));
 }
 
 void ABattleMobaCharacter::OnRep_Team()
