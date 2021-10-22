@@ -130,6 +130,9 @@ protected:
 	/** Handler for when a touch input stops. */
 	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
 
+	/** Input call camera shake */
+	void OnCameraShake();
+
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
@@ -400,7 +403,7 @@ protected:
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
 		void MulticastExecuteAction(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack);
 
-	//Get skills from input touch combo
+	//Get section to play from combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
 		void AttackCombo(FActionSkill SelectedRow);
 
@@ -432,6 +435,9 @@ protected:
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "ActionSkill")
 		void RotateNearestTarget(AActor* Target);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Effects")
+		void CombatCamShake();
 
 public:
 	/** Returns CameraBoom subobject **/
