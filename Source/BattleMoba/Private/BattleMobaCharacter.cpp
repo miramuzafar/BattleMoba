@@ -851,7 +851,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 						if (row->SkillMoveset != nullptr)
 						{
 							TargetHead = row->TargetIsHead;
-							//DetectNearestTarget();
+							DetectNearestTarget();
 							AttackCombo(*row);
 							break;
 
@@ -1225,20 +1225,56 @@ void ABattleMobaCharacter::SafeZoneMulticast_Implementation(ABMobaTriggerCapsule
 
 void ABattleMobaCharacter::ControlFlagMode(ABattleMobaCTF * cf)
 {
-	if (this->IsLocallyControlled())
+	UUserWidget* HPWidget = Cast<UUserWidget>(cf->W_ValControl->GetUserWidgetObject());
+	if (HPWidget)
 	{
-		//Run server Control Flag
-		ControlFlagServer(cf);
+		const FName hpbar = FName(TEXT("PBar"));
+		UProgressBar* PBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
+
+		const FName hptext = FName(TEXT("ValText"));
+		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
+
+		if (PBar)
+		{
+			//FSlateBrush newBrush;
+			if (this->IsLocallyControlled())
+			{
+				//Change to progressbar color to blue
+				if (PBar->Percent <= 0.0f)
+				{
+					PBar->SetFillColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+					if (HealthText)
+					{
+						HealthText->SetColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+					}
+				}
+				//Run server Control Flag
+				ControlFlagServer(cf);
+			}
+			else
+			{
+				if (PBar->Percent <= 0.0f)
+				{
+					//Change progressbar color to red
+					PBar->SetFillColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
+					if (HealthText)
+					{
+						HealthText->SetColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
+					}
+					//newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
+				}
+			}
+			//PBar->WidgetStyle.SetBackgroundImage(newBrush);
+		}
 	}
-	
 }
 
-bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF * cf)
+bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF* cf)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF * cf)
+void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF* cf)
 {
 	if (cf->RadiantControl > 0 && cf->DireControl == 0)
 	{
