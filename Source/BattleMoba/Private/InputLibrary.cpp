@@ -124,25 +124,22 @@ void UInputLibrary::Distance_Sort(UPARAM()TArray<AActor*> Array_To_Sort, UPARAM(
 
 void UInputLibrary::SetUIVisibility(UWidgetComponent* widget, AActor* FromActor)
 {
-	if (widget)
+	FHitResult Hit(ForceInit);
+
+	if (UGameplayStatics::GetPlayerCameraManager(FromActor, 0))
 	{
-		FHitResult Hit(ForceInit);
+		FVector start = FromActor->GetActorLocation();
+		FVector End = UGameplayStatics::GetPlayerCameraManager(FromActor, 0)->GetCameraLocation();
+		FCollisionQueryParams CollisionParams;
+		CollisionParams.AddIgnoredActor(FromActor);
 
-		if (UGameplayStatics::GetPlayerCameraManager(FromActor, 0))
+		if (FromActor->GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams))
 		{
-			FVector start = FromActor->GetActorLocation();
-			FVector End = UGameplayStatics::GetPlayerCameraManager(FromActor, 0)->GetCameraLocation();
-			FCollisionQueryParams CollisionParams;
-			CollisionParams.AddIgnoredActor(FromActor);
-
-			if (FromActor->GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams))
-			{
-				widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
-			}
-			else
-			{
-				widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
-			}
+			widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+		}
+		else
+		{
+			widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
 		}
 	}
 }
