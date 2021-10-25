@@ -236,6 +236,9 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ABattleMobaCharacter::OnResetVR);
+
+	//	Camera Shake test input
+	PlayerInputComponent->BindAction("TestCam", IE_Released, this, &ABattleMobaCharacter::OnCameraShake);
 }
 
 void ABattleMobaCharacter::BeginPlay()
@@ -851,7 +854,10 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 						if (row->SkillMoveset != nullptr)
 						{
 							TargetHead = row->TargetIsHead;
-							DetectNearestTarget();
+							if (this->IsLocallyControlled())
+							{
+								DetectNearestTarget();
+							}
 							AttackCombo(*row);
 							break;
 
@@ -1286,14 +1292,15 @@ void ABattleMobaCharacter::ControlFlagMode(ABattleMobaCTF* cf)
 		//Run server Control Flag
 		ControlFlagServer(cf);
 	}
+	
 }
 
-bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF* cf)
+bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF * cf)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF* cf)
+void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF * cf)
 {
 	if (cf->RadiantControl > 0 && cf->DireControl == 0)
 	{
@@ -1715,6 +1722,12 @@ void ABattleMobaCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector L
 void ABattleMobaCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
 	StopJumping();
+}
+
+void ABattleMobaCharacter::OnCameraShake()
+{
+	CombatCamShake();
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Calling Camera Shake Function")));
 }
 
 void ABattleMobaCharacter::OnRep_Team()

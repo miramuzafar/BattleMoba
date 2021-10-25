@@ -7,7 +7,6 @@
 #include "Components/SphereComponent.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/TextBlock.h"
-#include "Components/ProgressBar.h"
 #include "Components/WidgetComponent.h"
 #include "TimerManager.h"
 #include "Styling/SlateColor.h"
@@ -111,14 +110,15 @@ void ABattleMobaCTF::OnOverlapEnd(AActor * OverlappedActor, AActor * OtherActor)
 
 void ABattleMobaCTF::OnRep_Val()
 {
+	
 	UUserWidget* HPWidget = Cast<UUserWidget>(W_ValControl->GetUserWidgetObject());
 	if (HPWidget)
 	{
 		const FName hptext = FName(TEXT("ValText"));
 		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
 
-		const FName hpbar = FName(TEXT("PBar"));
-		UProgressBar* PBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
+		/*const FName hpbar = FName(TEXT("HPBar"));
+		UProgressBar* HealthBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));*/
 
 		if (HealthText)
 		{
@@ -142,6 +142,9 @@ void ABattleMobaCTF::OnRep_Val()
 				HealthText->SetText(FText::FromString(TheFloatStr));
 				PBar->SetPercent(FMath::Clamp(0.0f / 100.0f, 0.0f, 1.0f));
 			}
+
+			
+			//HealthBar->SetPercent(FMath::Clamp(this->Health / 100.0f, 0.0f, 1.0f));
 		}
 	}
 }

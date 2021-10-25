@@ -81,10 +81,6 @@ public:
 
 public:
 
-	//		3D UI On TriggerBox
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
-		class UWidgetComponent* W_ValControl;
-
 	UPROPERTY(Replicated)
 		FTimerHandle FlagTimer;
 
@@ -100,6 +96,10 @@ protected:
 	//		Flag Mesh
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 		class UStaticMeshComponent* MeshFlag;
+
+	//		3D UI On TriggerBox
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UWidgetComponent* W_ValControl;
 
 	//		Trigger collision radius
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status")
