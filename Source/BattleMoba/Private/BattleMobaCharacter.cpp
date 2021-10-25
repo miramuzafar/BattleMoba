@@ -1182,11 +1182,67 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target)
 
 void ABattleMobaCharacter::SafeZone(ABMobaTriggerCapsule* TriggerZone)
 {
-	if (IsLocallyControlled())
+	UUserWidget* HPWidget = Cast<UUserWidget>(TriggerZone->W_Val->GetUserWidgetObject());
+	if (HPWidget)
 	{
-		//Run server safezone
-		SafeZoneServer(TriggerZone);
+		const FName hpbar = FName(TEXT("PBar"));
+		UProgressBar* PBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
+
+		const FName hptext = FName(TEXT("ValText"));
+		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
+
+		if (PBar)
+		{
+			//FSlateBrush newBrush;
+			if (this->IsLocallyControlled())
+			{
+				//Change to progressbar color to blue
+				if (PBar->Percent <= 0.0f)
+				{
+					PBar->SetFillColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+					if (HealthText)
+					{
+						HealthText->SetColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+					}
+				}
+				SafeZoneServer(TriggerZone);
+			}
+			else
+			{
+				//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Current Team is %s"), ((*Team.ToString()))));
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Team is %s"), ((*this->TeamName.ToString()))));
+				if (PBar->Percent <= 0.0f)
+				{
+					if (this->TeamName == TriggerZone->TeamName)
+					{
+						//Change progressbar color to red
+						PBar->SetFillColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
+						if (HealthText)
+						{
+							HealthText->SetColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
+						}
+					}
+					else
+					{
+						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Team is %s"), ((*this->TeamName.ToString()))));
+						//Change progressbar color to red
+						PBar->SetFillColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+						if (HealthText)
+						{
+							HealthText->SetColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+						}
+						//newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
+					}
+				}
+			}
+			//PBar->WidgetStyle.SetBackgroundImage(newBrush);
+		}
 	}
+	//if (IsLocallyControlled())
+	//{
+	//	//Run server safezone
+	//	SafeZoneServer(TriggerZone);
+	//}
 }
 
 bool ABattleMobaCharacter::SafeZoneServer_Validate(ABMobaTriggerCapsule* TriggerZone)
@@ -1223,49 +1279,12 @@ void ABattleMobaCharacter::SafeZoneMulticast_Implementation(ABMobaTriggerCapsule
 	TriggerZone->OnRep_Val();
 }
 
-void ABattleMobaCharacter::ControlFlagMode(ABattleMobaCTF * cf)
+void ABattleMobaCharacter::ControlFlagMode(ABattleMobaCTF* cf)
 {
-	UUserWidget* HPWidget = Cast<UUserWidget>(cf->W_ValControl->GetUserWidgetObject());
-	if (HPWidget)
+	if (this->IsLocallyControlled())
 	{
-		const FName hpbar = FName(TEXT("PBar"));
-		UProgressBar* PBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
-
-		const FName hptext = FName(TEXT("ValText"));
-		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
-
-		if (PBar)
-		{
-			//FSlateBrush newBrush;
-			if (this->IsLocallyControlled())
-			{
-				//Change to progressbar color to blue
-				if (PBar->Percent <= 0.0f)
-				{
-					PBar->SetFillColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
-					if (HealthText)
-					{
-						HealthText->SetColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
-					}
-				}
-				//Run server Control Flag
-				ControlFlagServer(cf);
-			}
-			else
-			{
-				if (PBar->Percent <= 0.0f)
-				{
-					//Change progressbar color to red
-					PBar->SetFillColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
-					if (HealthText)
-					{
-						HealthText->SetColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
-					}
-					//newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
-				}
-			}
-			//PBar->WidgetStyle.SetBackgroundImage(newBrush);
-		}
+		//Run server Control Flag
+		ControlFlagServer(cf);
 	}
 }
 
@@ -1301,16 +1320,16 @@ void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF* cf)
 	
 }
 
-bool ABattleMobaCharacter::ControlFlagMulticast_Validate(ABattleMobaCTF * cf, FName Team)
+bool ABattleMobaCharacter::ControlFlagMulticast_Validate(ABattleMobaCTF* cf, FName Team)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF * cf, FName Team)
+void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF* cf, FName Team)
 {
 	if (Team == "Radiant")
 	{
-		//		Decrease the valDire if exists first before increasing valRadiant
+		//	Decrease the valDire if exists first before increasing valRadiant
 		if (cf->valDire <= 0.0f)
 		{
 			cf->valDire = 0.0f;
@@ -1365,9 +1384,16 @@ void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF * 
 		}
 
 		cf->OnRep_Val();
-		
 	}
-	
+
+	if (cf->isCompleted == false)
+	{
+		ABattleMobaGameState* thisGS = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+		if (thisGS)
+		{
+			thisGS->SetTowerWidgetColors(cf);
+		}
+	}
 }
 
 bool ABattleMobaCharacter::SetupStats_Validate()

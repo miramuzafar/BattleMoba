@@ -6,6 +6,7 @@
 #include "Engine/TriggerSphere.h"
 #include "BattleMobaCTF.generated.h"
 
+class ABattleMobaCharacter;
 /**
  * 
  */
@@ -63,7 +64,7 @@ public:
 		TArray<AActor*> OverlappedPlayer;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
-		class ABattleMobaCharacter* ActivePlayer;
+		ABattleMobaCharacter* ActivePlayer;
 
 	//	how many of Radiant Players inside of Control Flag radius
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Status")

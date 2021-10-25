@@ -459,7 +459,6 @@ public:
 		void SafeZoneMulticast(ABMobaTriggerCapsule* TriggerZone);
 
 	/***********************CONTROL FLAG MODE*****************************/
-
 	void ControlFlagMode(ABattleMobaCTF* cf);
 
 };

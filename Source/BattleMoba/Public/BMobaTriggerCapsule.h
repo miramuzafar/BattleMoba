@@ -20,13 +20,19 @@ class BATTLEMOBA_API ABMobaTriggerCapsule : public ATriggerCapsule
 	UPROPERTY(VisibleAnywhere)
 		class UStaticMeshComponent* Mesh;
 
-	//3D UI On TriggerBox
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
-		class UWidgetComponent* W_Val;
-
 public:
 
 	ABMobaTriggerCapsule();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+		void ChangeUI(ABattleMobaCharacter* actor);
+
+	UFUNCTION(NetMulticast, Unreliable, WithValidation)
+		void ChangeUIMulticast(ABattleMobaCharacter* actor);
+
+	//3D UI On TriggerBox
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UWidgetComponent* W_Val;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Val, BlueprintReadWrite, Category = "Status")
 		float val = 0.0f;
@@ -46,7 +52,6 @@ protected:
 
 private:
 
-	
 	//overlap begin function
 	UFUNCTION()
 		void OnOverlapBegin(class AActor* OverlappedActor, class AActor* OtherActor);

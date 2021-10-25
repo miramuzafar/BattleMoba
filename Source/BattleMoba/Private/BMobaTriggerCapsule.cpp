@@ -48,6 +48,24 @@ ABMobaTriggerCapsule::ABMobaTriggerCapsule()
 	W_Val->SetGenerateOverlapEvents(false);
 }
 
+bool ABMobaTriggerCapsule::ChangeUIMulticast_Validate(ABattleMobaCharacter * actor)
+{
+	return true;
+}
+
+void ABMobaTriggerCapsule::ChangeUIMulticast_Implementation(ABattleMobaCharacter * actor)
+{
+}
+
+bool ABMobaTriggerCapsule::ChangeUI_Validate(ABattleMobaCharacter * actor)
+{
+	return true;
+}
+
+void ABMobaTriggerCapsule::ChangeUI_Implementation(ABattleMobaCharacter * actor)
+{
+}
+
 void ABMobaTriggerCapsule::BeginPlay()
 {
 	Super::BeginPlay();
@@ -82,31 +100,32 @@ void ABMobaTriggerCapsule::OnOverlapBegin(AActor* OverlappedActor, AActor* Other
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Overlapping %s"), *UKismetSystemLibrary::GetDisplayName(OtherActor)));
 		if (pc)
 		{
-			pc->SafeZone(this);
-			if (TeamName == "")
-			{
-				TeamName = pc->TeamName;
-				UUserWidget* HPWidget = Cast<UUserWidget>(W_Val->GetUserWidgetObject());
-				if (HPWidget)
-				{
-					const FName hpbar = FName(TEXT("PBar"));
-					UProgressBar* PBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
+			//if (TeamName == "")
+			//{
+			//	TeamName = pc->TeamName;
+			//	/*UUserWidget* HPWidget = Cast<UUserWidget>(W_Val->GetUserWidgetObject());
+			//	if (HPWidget)
+			//	{
+			//		const FName hpbar = FName(TEXT("PBar"));
+			//		UProgressBar* PBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
 
-					if (PBar)
-					{
-						FSlateBrush newBrush;
-						if (pc->IsLocallyControlled())
-						{
-							newBrush.TintColor = FLinearColor(0.0f, 0.0f, 0.5f);
-						}
-						else
-						{
-							newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
-						}
-						PBar->WidgetStyle.SetBackgroundImage(newBrush);
-					}
-				}
-			}
+			//		if (PBar)
+			//		{
+			//			FSlateBrush newBrush;
+			//			if (pc->IsLocallyControlled())
+			//			{
+			//				newBrush.TintColor = FLinearColor(0.0f, 0.0f, 0.5f);
+			//			}
+			//			else
+			//			{
+			//				newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
+			//			}
+			//			PBar->WidgetStyle.SetBackgroundImage(newBrush);
+			//		}
+			//	}*/
+			//}
+			TeamName = pc->TeamName;
+			pc->SafeZone(this);
 		}
 	}
 }

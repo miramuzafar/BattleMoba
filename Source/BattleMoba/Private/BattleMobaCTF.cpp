@@ -26,6 +26,7 @@ void ABattleMobaCTF::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ABattleMobaCTF, DireControl);
 	DOREPLIFETIME(ABattleMobaCTF, isCompleted);
 	DOREPLIFETIME(ABattleMobaCTF, GoldTimer);
+	DOREPLIFETIME(ABattleMobaCTF, ActivePlayer);
 }
 
 // Sets default values
@@ -71,7 +72,7 @@ void ABattleMobaCTF::BeginPlay()
 	Super::BeginPlay();
 
 	//		Run TimerFunction every ControllingSpeed after 1 second the game has started
-	this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, true, 1.0f);
+	//this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, true, 1.0f);
 
 	//		Find all actors of class ONCE for GoldTimerFunction
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABattleMobaCharacter::StaticClass(), GiveGoldActors);
@@ -80,42 +81,18 @@ void ABattleMobaCTF::BeginPlay()
 	this->GetWorldTimerManager().SetTimer(GoldTimer, this, &ABattleMobaCTF::GoldTimerFunction, 1.0f, true, 20.0f);
 }
 
-void ABattleMobaCTF::OnOverlapBegin(AActor * OverlappedActor, AActor * OtherActor)
+void ABattleMobaCTF::OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
 {
 	if (OtherActor && (OtherActor != this))
 	{
 		ABattleMobaCharacter* pb = Cast<ABattleMobaCharacter>(OtherActor);
 		if (pb)
 		{
-			//		set CTFentering to true to add integer of a team in the sphere
+			//	set CTFentering to true to add integer of a team in the sphere
 			pb->CTFentering = true;
-
-			//UUserWidget* HPWidget = Cast<UUserWidget>(W_ValControl->GetUserWidgetObject());
-			//if (HPWidget)
-			//{
-			//	const FName hpbar = FName(TEXT("PBar"));
-			//	UProgressBar* PBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
-
-			//	if (PBar)
-			//	{
-			//		//FSlateBrush newBrush;
-			//		if (pb->IsLocallyControlled())
-			//		{
-			//			if (PBar->Percent <= 0.0f)
-			//			{
-			//				PBar->SetFillColorAndOpacity(FLinearColor(0.0f, 0.0f, 1.0f));
-			//			}
-			//		}
-			//		else
-			//		{
-			//			PBar->SetFillColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f));
-			//			//newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
-			//		}
-			//		//PBar->WidgetStyle.SetBackgroundImage(newBrush);
-			//	}
-			//}
+			
+			this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, true, 0.0f);
 		}
-		
 	}
 }
 
@@ -150,19 +127,6 @@ void ABattleMobaCTF::OnRep_Val()
 				FString TheFloatStr = FString::SanitizeFloat(this->valRadiant);
 				HealthText->SetText(FText::FromString(TheFloatStr));
 				PBar->SetPercent(FMath::Clamp(this->valRadiant / 100.0f, 0.0f, 1.0f));
-
-				/*if (HasAuthority())
-				{
-					FSlateBrush newBrush;
-					newBrush.TintColor = FLinearColor(0.0f, 0.0f, 1.0f);
-					PBar->WidgetStyle.SetBackgroundImage(newBrush);
-				}
-				else
-				{
-					FSlateBrush newBrush;
-					newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
-					PBar->WidgetStyle.SetBackgroundImage(newBrush);
-				}*/
 			}
 
 			else if (this->valRadiant <= 0 && this->valDire > 0)
@@ -170,22 +134,13 @@ void ABattleMobaCTF::OnRep_Val()
 				FString TheFloatStr = FString::SanitizeFloat(this->valDire);
 				HealthText->SetText(FText::FromString(TheFloatStr));
 				PBar->SetPercent(FMath::Clamp(this->valDire / 100.0f, 0.0f, 1.0f));
-
-				/*FSlateBrush newBrush;
-				newBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f);
-				PBar->WidgetStyle.SetBackgroundImage(newBrush);*/
 			}
 			
 			else
 			{
 				FString TheFloatStr = FString::SanitizeFloat(0.0f);
 				HealthText->SetText(FText::FromString(TheFloatStr));
-				//HealthText->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
 				PBar->SetPercent(FMath::Clamp(0.0f / 100.0f, 0.0f, 1.0f));
-
-				/*FSlateBrush newBrush;
-				newBrush.TintColor = FLinearColor(0.0f, 0.0f, 0.0f);
-				PBar->WidgetStyle.SetBackgroundImage(newBrush);*/
 			}
 		}
 	}
@@ -193,7 +148,7 @@ void ABattleMobaCTF::OnRep_Val()
 
 void ABattleMobaCTF::TimerFunction()
 {
-	//		check overlapping actor in CTF sphere for every controlling speed
+	//check overlapping actor in CTF sphere for every controlling speed
 	this->GetOverlappingActors(this->OverlappedPlayer, ABattleMobaCharacter::StaticClass());
 	int arrLength = this->OverlappedPlayer.Num();
 
@@ -214,7 +169,6 @@ void ABattleMobaCTF::TimerFunction()
 				{
 					this->DireControl = this->DireControl + 1;
 				}
-
 				ActivePlayer->ControlFlagMode(this);
 			}
 
@@ -229,7 +183,6 @@ void ABattleMobaCTF::TimerFunction()
 				{
 					this->DireControl = this->DireControl - 1;
 				}
-
 				ActivePlayer->ControlFlagMode(this);
 			}
 		}
@@ -240,6 +193,10 @@ void ABattleMobaCTF::GoldTimerFunction()
 {
 	if (isCompleted)
 	{
+		if (this->GetWorldTimerManager().IsTimerActive(FlagTimer))
+		{
+			this->GetWorldTimerManager().ClearTimer(FlagTimer);
+		}
 		int arrLength = this->GiveGoldActors.Num();
 
 		//		for every player of the controller team will gain chi orbs for every second when the Control Flag progress reaches 100

@@ -6,6 +6,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "BattleMobaGameState.generated.h"
 
+class ABattleMobaCTF;
 /**
  * 
  */
@@ -47,4 +48,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Clock")
 		FString Winner;
 
+	//Change local tower progressbar color
+	UFUNCTION()
+		void SetTowerWidgetColors(ABattleMobaCTF* cf);
 };
