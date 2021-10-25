@@ -20,6 +20,7 @@ void ABMobaTriggerCapsule::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ABMobaTriggerCapsule, FlagTimer);
+	DOREPLIFETIME(ABMobaTriggerCapsule, TeamName);
 }
 
 ABMobaTriggerCapsule::ABMobaTriggerCapsule()

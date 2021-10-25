@@ -32,7 +32,10 @@ class ABattleMobaCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* FollowCamera;
 
-	/*3DWidget*/
+	//Outline
+	//Setting up character mesh for player
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, Meta = (AllowPrivateAccess = "true"))
+		class UStaticMeshComponent* Outline;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
 		class USphereComponent* ViewDistanceCol;

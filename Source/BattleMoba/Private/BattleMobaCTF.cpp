@@ -7,6 +7,7 @@
 #include "Components/SphereComponent.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
 #include "Components/WidgetComponent.h"
 #include "TimerManager.h"
 #include "Styling/SlateColor.h"
@@ -55,6 +56,7 @@ ABattleMobaCTF::ABattleMobaCTF()
 	W_ValControl->SetupAttachment(RootComponent);
 	W_ValControl->SetRelativeLocation(FVector(0.0f, 0.0f, 80.0f));
 	W_ValControl->InitWidget();
+	W_ValControl->SetIsReplicated(true);
 
 	W_ValControl->SetWidgetSpace(EWidgetSpace::Screen);
 	W_ValControl->SetDrawAtDesiredSize(true);
@@ -110,15 +112,14 @@ void ABattleMobaCTF::OnOverlapEnd(AActor * OverlappedActor, AActor * OtherActor)
 
 void ABattleMobaCTF::OnRep_Val()
 {
-	
 	UUserWidget* HPWidget = Cast<UUserWidget>(W_ValControl->GetUserWidgetObject());
 	if (HPWidget)
 	{
 		const FName hptext = FName(TEXT("ValText"));
 		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
 
-		/*const FName hpbar = FName(TEXT("HPBar"));
-		UProgressBar* HealthBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));*/
+		const FName hpbar = FName(TEXT("PBar"));
+		UProgressBar* PBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
 
 		if (HealthText)
 		{

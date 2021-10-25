@@ -67,6 +67,12 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 
 ABattleMobaCharacter::ABattleMobaCharacter()
 {
+	// Create a outline
+	Outline = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Outline"));
+	Outline->SetupAttachment(RootComponent);
+	Outline->SetRelativeLocation(FVector(0.00f, 0.000000f, -98.000000f));
+	Outline->SetVisibility(false);
+
 	this->GetMesh()->SetVisibility(false);
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);

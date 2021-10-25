@@ -42,6 +42,8 @@ public:
 	UPROPERTY(Replicated)
 		FTimerHandle FlagTimer;
 
+	UPROPERTY(Replicated)
+		FName TeamName;
 
 protected:
 

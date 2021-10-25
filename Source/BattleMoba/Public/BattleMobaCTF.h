@@ -45,6 +45,10 @@ public:
 
 	float LastOnScreenTime = 0.01f;
 
+	//		3D UI On TriggerBox
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UWidgetComponent* W_ValControl;
+
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Val, BlueprintReadWrite, Category = "Status")
 		float valRadiant = 0.0f;
 
@@ -79,15 +83,16 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		TArray<AActor*> GiveGoldActors;
 
-public:
-
 	UPROPERTY(Replicated)
 		FTimerHandle FlagTimer;
 
-	void TimerFunction();
-
 	UPROPERTY(Replicated)
 		FTimerHandle GoldTimer;
+
+
+public:
+
+	void TimerFunction();
 
 	void GoldTimerFunction();
 
@@ -96,10 +101,6 @@ protected:
 	//		Flag Mesh
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 		class UStaticMeshComponent* MeshFlag;
-
-	//		3D UI On TriggerBox
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
-		class UWidgetComponent* W_ValControl;
 
 	//		Trigger collision radius
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status")
