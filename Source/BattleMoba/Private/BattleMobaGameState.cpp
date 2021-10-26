@@ -29,7 +29,7 @@ void ABattleMobaGameState::SetTowerWidgetColors(ABattleMobaCTF* cf)
 {
 	if (cf->ActivePlayer != nullptr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Actor tName %s"), ((*cf->ActivePlayer->GetFName().ToString()))));
+		//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Actor tName %s"), ((*cf->ActivePlayer->GetFName().ToString()))));
 		UUserWidget* HPWidget = Cast<UUserWidget>(cf->W_ValControl->GetUserWidgetObject());
 		if (HPWidget)
 		{
@@ -75,7 +75,7 @@ void ABattleMobaGameState::SetTowerWidgetColors(ABattleMobaCTF* cf)
 				}
 			}
 		}
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Actor is invalid")));
+		//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Actor is invalid")));
 	}
 }
 
