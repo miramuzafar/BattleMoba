@@ -124,22 +124,26 @@ void UInputLibrary::Distance_Sort(UPARAM()TArray<AActor*> Array_To_Sort, UPARAM(
 
 void UInputLibrary::SetUIVisibility(UWidgetComponent* widget, AActor* FromActor)
 {
-	FHitResult Hit(ForceInit);
-
-	if (UGameplayStatics::GetPlayerCameraManager(FromActor, 0))
+	//only run on client and server
+	if (FromActor->GetNetMode() != ENetMode::NM_DedicatedServer)
 	{
-		FVector start = FromActor->GetActorLocation();
-		FVector End = UGameplayStatics::GetPlayerCameraManager(FromActor, 0)->GetCameraLocation();
-		FCollisionQueryParams CollisionParams;
-		CollisionParams.AddIgnoredActor(FromActor);
+		FHitResult Hit(ForceInit);
 
-		if (FromActor->GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams))
+		if (UGameplayStatics::GetPlayerCameraManager(FromActor, 0))
 		{
-			widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
-		}
-		else
-		{
-			widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
+			FVector start = FromActor->GetActorLocation();
+			FVector End = UGameplayStatics::GetPlayerCameraManager(FromActor, 0)->GetCameraLocation();
+			FCollisionQueryParams CollisionParams;
+			CollisionParams.AddIgnoredActor(FromActor);
+
+			if (FromActor->GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams) && (Hit.Distance > 100.0f))
+			{
+				widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+			}
+			else
+			{
+				widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
+			}
 		}
 	}
 }

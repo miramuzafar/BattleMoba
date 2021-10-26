@@ -51,6 +51,7 @@ Plugins/*/Binaries/*
 
 # Builds
 Build/*
+/Packaged
 
 # Whitelist PakBlacklist-<BuildConfiguration>.txt files
 !Build/*/
@@ -76,3 +77,4 @@ DerivedDataCache/*
 *.uproject
 *.uproject
 BattleMoba.uproject
+Source/BattleMobaServer.Target.cs

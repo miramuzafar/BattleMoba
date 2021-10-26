@@ -51,18 +51,18 @@ void ABattleMobaGameState::SetTowerWidgetColors(ABattleMobaCTF* cf)
 				if (thisPS == activePS)
 				{
 					//Change progressbar color to blue
-					PBar->SetFillColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+					PBar->SetFillColorAndOpacity(FLinearColor(0.5f, 1.0f, 0.0f));
 					if (HealthText)
 					{
-						HealthText->SetColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+						HealthText->SetColorAndOpacity(FLinearColor(0.5f, 1.0f, 0.0f));
 					}				
 				}
 				else if (thisPS->TeamName == activePS->TeamName)//if current owner is on the same team as current local player
 				{
-					PBar->SetFillColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+					PBar->SetFillColorAndOpacity(FLinearColor(0.5f, 1.0f, 0.0f));
 					if (HealthText)
 					{
-						HealthText->SetColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+						HealthText->SetColorAndOpacity(FLinearColor(0.5f, 1.0f, 0.0f));
 					}
 				}
 				else //if its an enemy, change tower to red locally
