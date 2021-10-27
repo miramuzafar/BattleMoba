@@ -6,6 +6,7 @@
 #include "Math/UnrealMathUtility.h"
 #include "Kismet/KismetTextLibrary.h"
 #include "Components/WidgetComponent.h"
+#include "DrawDebugHelpers.h"
 
 FDateTime UInputLibrary::GetCurrentDateAndTime()
 {
@@ -131,19 +132,36 @@ void UInputLibrary::SetUIVisibility(UWidgetComponent* widget, AActor* FromActor)
 
 		if (UGameplayStatics::GetPlayerCameraManager(FromActor, 0))
 		{
-			FVector start = FromActor->GetActorLocation();
+			FVector start = widget->GetComponentLocation();
 			FVector End = UGameplayStatics::GetPlayerCameraManager(FromActor, 0)->GetCameraLocation();
 			FCollisionQueryParams CollisionParams;
 			CollisionParams.AddIgnoredActor(FromActor);
 
-			if (FromActor->GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams) && (Hit.Distance > 100.0f))
+			DrawDebugBox(FromActor->GetWorld(), widget->GetComponentLocation(), FVector(widget->GetCurrentDrawSize().X / 10.0f, widget->GetCurrentDrawSize().Y / 10.0f, (widget->GetCurrentDrawSize().Y / 10.0f) / 4.0f), FColor::Magenta);
+
+			//Set box collision size
+			FCollisionShape BoxCol = FCollisionShape::MakeBox(FVector(widget->GetCurrentDrawSize().X/10.0f, widget->GetCurrentDrawSize().Y/10.0f,(widget->GetCurrentDrawSize().Y/10.0f)/4.0f));
+
+			if (FromActor->GetWorld()->SweepSingleByChannel(Hit, start, End, FQuat::Identity, ECC_Visibility, BoxCol, CollisionParams))
 			{
-				widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+
+				widget->SetVisibility(false);
 			}
 			else
 			{
-				widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
+				widget->SetVisibility(true);
 			}
+
+			//if (FromActor->GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams) && (Hit.Distance > 100.0f))
+			//{
+			//	widget->SetVisibility(false);
+			//	//widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+			//}
+			//else
+			//{
+			//	widget->SetVisibility(true);
+			//	//widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
+			//}
 		}
 	}
 }

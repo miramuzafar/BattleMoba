@@ -166,8 +166,10 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 	W_DamageOutput->SetupAttachment(RootComponent);
 	W_DamageOutput->SetRelativeLocation(FVector(0.000000f, 0.0f, 100.0f));
 	W_DamageOutput->InitWidget();
+	W_DamageOutput->SetVisibility(false);
 
 	W_DamageOutput->SetWidgetSpace(EWidgetSpace::Screen);
+	W_DamageOutput->SetDrawSize(FVector2D(500.0f, 500.0f));
 	W_DamageOutput->SetDrawAtDesiredSize(true);
 	//W_DamageOutput->SetVisibility(false);
 	W_DamageOutput->SetGenerateOverlapEvents(false);
