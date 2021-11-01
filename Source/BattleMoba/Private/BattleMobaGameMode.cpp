@@ -245,6 +245,11 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 	{
 		if (HasAuthority())
 		{
+			//destroys existing pawn before spawning a new one
+			if (playerController->GetPawn() != nullptr)
+			{
+				playerController->GetPawn()->Destroy();
+			}
 			ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(playerController->PlayerState);
 			{
 				//Spawn actor
@@ -261,18 +266,9 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 
 						UGameplayStatics::FinishSpawningActor(pawn, FTransform(SpawnTransform.Rotator(), SpawnTransform.GetLocation()));
 					}
-
-					FTimerHandle handle;
-					FTimerDelegate TimerDelegate;
-
-					//Possess a pawn
-					TimerDelegate.BindLambda([playerController, pawn]()
-					{
-						UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE POSSESSING A PAWN"));
-						playerController->Possess(pawn);
-						playerController->ClientSetRotation(pawn->GetActorRotation());
-					});
-					this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.2f, false);
+					//possess and set new rotation for newly spawned pawn
+					playerController->Possess(pawn);
+					playerController->ClientSetRotation(pawn->GetActorRotation());
 				}
 			}
 		}

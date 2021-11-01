@@ -9,6 +9,13 @@
 
 class UWidgetComponent;
 
+UENUM(BlueprintType)
+enum class EFormula : uint8
+{
+	Addition,
+	Subtraction
+};
+
 USTRUCT(BlueprintType)
 struct FActionSkill : public FTableRowBase
 {

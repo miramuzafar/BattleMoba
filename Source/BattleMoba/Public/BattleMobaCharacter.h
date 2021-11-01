@@ -138,6 +138,9 @@ protected:
 
 protected:
 
+	//rain checks on action skills to be executed
+	bool ActionEnabled = true;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
 		float TraceDistance = 0.0f;
 
