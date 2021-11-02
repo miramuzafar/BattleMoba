@@ -247,16 +247,17 @@ void ABattleMobaGameMode::StartRespawnTimer(ABattleMobaPlayerState* ps)
 
 void ABattleMobaGameMode::RespawnTimerCount(FTimerHandle* RespawnHandle, ABattleMobaPlayerState* ps)
 {
-	if (ps->RespawnTimeCounter > 1)
+	if (ps->RespawnTimeCounter >= 1)
 	{
 		ps->RespawnTimeCounter -= 1;
+		ps->DisplayRespawnTime();
 	}
 	else
 	{
+		ps->RespawnTimeCounter = 29;
+		ps->DisplayRespawnTime();
 		this->GetWorldTimerManager().ClearTimer(*RespawnHandle);
-		ps->RespawnTimeCounter = 30;
 	}
-	ps->DisplayRespawnTime();
 }
 
 bool ABattleMobaGameMode::RespawnRequested_Validate(APlayerController* playerController, FTransform SpawnTransform)

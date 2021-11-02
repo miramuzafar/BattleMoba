@@ -42,9 +42,9 @@ public:
 		int ChiOrbs = 0;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Item")
-		int RespawnTimeCounter = 30;
+		int RespawnTimeCounter = 29;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Respawn")
 	FTimerHandle RespawnHandle;
 
 public:
