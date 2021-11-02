@@ -234,6 +234,31 @@ void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMo
 	}
 }
 
+void ABattleMobaGameMode::StartRespawnTimer(ABattleMobaPlayerState* ps)
+{
+	FTimerDelegate FunctionsName;
+	
+	//FunctionsName = FTimerDelegate::CreateUObject(this, &ATodakBattleArenaCharacter::UpdateHealthStatusBar, EBarType::PrimaryProgressBar);
+	FunctionsName = FTimerDelegate::CreateUObject(this, &ABattleMobaGameMode::RespawnTimerCount, &ps->RespawnHandle, ps);
+			
+	UE_LOG(LogTemp, Warning, TEXT("RespawnTimer started!"));
+	GetWorld()->GetTimerManager().SetTimer(ps->RespawnHandle, FunctionsName, 1.0f, true);
+}
+
+void ABattleMobaGameMode::RespawnTimerCount(FTimerHandle* RespawnHandle, ABattleMobaPlayerState* ps)
+{
+	if (ps->RespawnTimeCounter > 1)
+	{
+		ps->RespawnTimeCounter -= 1;
+	}
+	else
+	{
+		this->GetWorldTimerManager().ClearTimer(*RespawnHandle);
+		ps->RespawnTimeCounter = 30;
+	}
+	ps->DisplayRespawnTime();
+}
+
 bool ABattleMobaGameMode::RespawnRequested_Validate(APlayerController* playerController, FTransform SpawnTransform)
 {
 	return true;

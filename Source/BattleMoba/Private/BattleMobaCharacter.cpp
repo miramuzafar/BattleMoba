@@ -252,8 +252,13 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	//this->GetMesh()->SkeletalMesh = CharMesh;
-
+	
+	/*ABattleMobaPlayerState* newPS = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
+	if (newPS)
+	{
+		newPS->RespawnTimeCounter = 30;
+	}
+*/
 	this->GetMesh()->SetSkeletalMesh(CharMesh, false);
 	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
@@ -561,37 +566,18 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					FTimerHandle handle;
 					FTimerDelegate TimerDelegate;
 
+					ABattleMobaGameMode* gm = Cast<ABattleMobaGameMode>(UGameplayStatics::GetGameMode(this));
+
+					//Set player's death count
+					ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
+
 					//set the row boolean to false after finish cooldown timer
-					TimerDelegate.BindLambda([this]()
+					TimerDelegate.BindLambda([this, gm, ps]()
 					{
-						//Set player's death count
-						ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
-						ABattleMobaGameMode* gm = Cast<ABattleMobaGameMode>(UGameplayStatics::GetGameMode(this));
 						if (gm)
 						{
 							gm->PlayerKilled(ps, this->DamageDealers.Last(), DamageDealers);
 						}
-						//for (int32 i = 0; i < this->DamageDealers.Num(); i++)
-						//{
-						//	if (this->DamageDealers[i] == this->DamageDealers.Last())
-						//	{
-						//		//Set killer Kill count
-						//		ABattleMobaPlayerState* pDealer = Cast<ABattleMobaPlayerState>(this->DamageDealers.Last()->GetPlayerState());
-						//		if (pDealer)
-						//		{
-						//			pDealer->Kill += 1;
-						//		}
-						//	}
-						//	else
-						//	{
-						//		//Set assist count
-						//		ABattleMobaPlayerState* pDealer = Cast<ABattleMobaPlayerState>(this->DamageDealers[i]->GetPlayerState());
-						//		if (pDealer)
-						//		{
-						//			pDealer->Assist += 1;
-						//		}
-						//	}
-						//}
 					});
 
 					//start cooldown the skill
@@ -605,11 +591,12 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 
 					if (GetLocalRole() == ROLE_Authority)
 					{
+						//Start Respawn Timer Count
+						gm->StartRespawnTimer(ps);
+
 						this->GetWorld()->GetTimerManager().SetTimer(this->RespawnTimer, this, &ABattleMobaCharacter::RespawnCharacter, 3.0f, false);
 					}
 				}
-
-
 				this->Health = Temp;
 				this->IsHit = false;
 
@@ -1072,6 +1059,7 @@ void ABattleMobaCharacter::RespawnCharacter_Implementation()
 		ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(PC->PlayerState);
 		if (PS)
 		{
+			PS->RespawnTimeCounter = PS->RespawnTimeCounter - 1;
 			PC->RespawnPawn(PS->SpawnTransform);
 			PC->UnPossess();
 		}

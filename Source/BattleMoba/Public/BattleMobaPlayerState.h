@@ -41,7 +41,17 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Item")
 		int ChiOrbs = 0;
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Item")
+		int RespawnTimeCounter = 30;
+
+	UPROPERTY(Replicated)
+	FTimerHandle RespawnHandle;
+
 public:
 	UFUNCTION(Reliable, Client, WithValidation, Category = "PI")
 		void SetPlayerIndex(int32 PlayerIndex);
+
+	//For displaying respawn time count
+	UFUNCTION(BlueprintImplementableEvent, Category = "Damage")
+		void DisplayRespawnTime();
 };

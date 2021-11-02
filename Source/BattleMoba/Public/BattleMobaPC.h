@@ -43,6 +43,10 @@ public:
 
 protected:
 	
+	//spectator pi
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "SpectID")
+		int32 SpectPI;
+
 	UFUNCTION(BlueprintPure, Category = "Increment")
 		static int32 CheckIndexValidity(int32 index, TArray<ABattleMobaPC*> PlayerList, EFormula SwitchMode);
 

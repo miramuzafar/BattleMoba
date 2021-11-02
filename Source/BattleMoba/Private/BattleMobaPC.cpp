@@ -65,20 +65,50 @@ bool ABattleMobaPC::SpectateNextPlayer_Validate(const TArray<ABattleMobaPC*>& Pl
 
 void ABattleMobaPC::SpectateNextPlayer_Implementation(const TArray<ABattleMobaPC*>& PlayerList, EFormula SwitchMode)
 {
-loop:
-	currentPlayer = CheckIndexValidity(currentPlayer, PlayerList, SwitchMode); //check if next spectated player is exist in an array
 
-	if (PlayerList[currentPlayer]->GetPawn() != nullptr) //checks if player does have a pawn
+	bool x = false;
+	int32 count = 0;
+
+	//get playerstate
+	ABattleMobaPlayerState* thisps = Cast<ABattleMobaPlayerState>(this->PlayerState);
+
+	for (int32 i = 0; i < PlayerList.Num(); i++)
 	{
-		if (PlayerList[currentPlayer]->GetPawn() != this->GetPawn()) //checks if spectated pawn is not current owning pawn
+		if (PlayerList[i]->GetPawn() != nullptr)
 		{
-			ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(PlayerList[currentPlayer]->PlayerState);
-			ABattleMobaPlayerState* thisps = Cast<ABattleMobaPlayerState>(this->PlayerState);
-			if (ps->TeamName == thisps->TeamName) //spectating only team pawn
+			ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(PlayerList[i]->PlayerState);
+			if (ps->TeamName == thisps->TeamName)
 			{
-				this->SetViewTargetWithBlend(PlayerList[currentPlayer], 0.0f, EViewTargetBlendFunction::VTBlend_Linear, 0.0f, true);
-				CurrSpectator = PlayerList[currentPlayer];//set new spectated player
-				return;
+				count += 1;
+				if (count > 0)
+				{
+					x = true;
+					break;
+				}
+			}
+		}
+	}
+	
+	//Is eligible to spectate??
+	if (x == true && count > 0)
+	{
+	loop:
+		currentPlayer = CheckIndexValidity(currentPlayer, PlayerList, SwitchMode); //check if next spectated player is exist in an array
+
+		if (PlayerList[currentPlayer]->GetPawn() != nullptr) //checks if player does have a pawn
+		{
+			if (PlayerList[currentPlayer]->GetPawn() != this->GetPawn()) //checks if spectated pawn is not current owning pawn
+			{
+				ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(PlayerList[currentPlayer]->PlayerState);
+				if (ps->TeamName == thisps->TeamName) //spectating only team pawn
+				{
+					this->SetViewTargetWithBlend(PlayerList[currentPlayer], 0.0f, EViewTargetBlendFunction::VTBlend_Linear, 0.0f, true);
+					CurrSpectator = PlayerList[currentPlayer];//set new spectated player
+					CurrSpectator->SpectPI = this->pi;
+					return;
+				}
+				else
+					goto loop;
 			}
 			else
 				goto loop;
@@ -86,8 +116,6 @@ loop:
 		else
 			goto loop;
 	}
-	else
-		goto loop;
 }
 
 bool ABattleMobaPC::SetupSpectator_Validate(EFormula SwitchMode)
@@ -132,8 +160,24 @@ void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 			//Assigned initial spectator player before swapping to active pawn player to spectate
 			currentPlayer = thisGameMode->Players.Find(this);
 			CurrSpectator = thisGameMode->Players[currentPlayer];
+			CurrSpectator->SpectPI = this->pi;
 
 			this->SpectateNextPlayer(thisGameMode->Players, EFormula::Addition);
+
+			//Setup spectator controller that currently spectating this player to switch to another player
+			ABattleMobaPC* newPC = Cast<ABattleMobaPC>(UGameplayStatics::GetPlayerController(GetWorld(), CurrSpectator->SpectPI));
+			if (newPC)
+			{
+				if (newPC->GetPawn() == nullptr)
+				{
+					newPC->currentPlayer = thisGameMode->Players.Find(newPC);
+					newPC->CurrSpectator = thisGameMode->Players[currentPlayer];
+					newPC->CurrSpectator->SpectPI = newPC->pi;
+
+					newPC->SpectateNextPlayer(thisGameMode->Players, EFormula::Addition);
+				}
+			}
+
 		});
 		this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.02f, false);
 
