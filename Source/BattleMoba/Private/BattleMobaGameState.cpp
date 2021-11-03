@@ -29,7 +29,7 @@ void ABattleMobaGameState::SetTowerWidgetColors(ABattleMobaCTF* cf)
 {
 	if (cf->ActivePlayer != nullptr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Actor tName %s"), ((*cf->ActivePlayer->GetFName().ToString()))));
+		//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Cyan, FString::Printf(TEXT("Actor tName %s"), ((*cf->ActivePlayer->GetFName().ToString()))));
 		UUserWidget* HPWidget = Cast<UUserWidget>(cf->W_ValControl->GetUserWidgetObject());
 		if (HPWidget)
 		{
@@ -51,18 +51,18 @@ void ABattleMobaGameState::SetTowerWidgetColors(ABattleMobaCTF* cf)
 				if (thisPS == activePS)
 				{
 					//Change progressbar color to blue
-					PBar->SetFillColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+					PBar->SetFillColorAndOpacity(FLinearColor(0.5f, 1.0f, 0.0f));
 					if (HealthText)
 					{
-						HealthText->SetColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+						HealthText->SetColorAndOpacity(FLinearColor(0.5f, 1.0f, 0.0f));
 					}				
 				}
 				else if (thisPS->TeamName == activePS->TeamName)//if current owner is on the same team as current local player
 				{
-					PBar->SetFillColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+					PBar->SetFillColorAndOpacity(FLinearColor(0.5f, 1.0f, 0.0f));
 					if (HealthText)
 					{
-						HealthText->SetColorAndOpacity(FLinearColor(0.0f, 0.5f, 1.0f));
+						HealthText->SetColorAndOpacity(FLinearColor(0.5f, 1.0f, 0.0f));
 					}
 				}
 				else //if its an enemy, change tower to red locally
@@ -75,7 +75,7 @@ void ABattleMobaGameState::SetTowerWidgetColors(ABattleMobaCTF* cf)
 				}
 			}
 		}
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Actor is invalid")));
+		//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Actor is invalid")));
 	}
 }
 

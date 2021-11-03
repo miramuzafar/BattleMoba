@@ -234,6 +234,32 @@ void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMo
 	}
 }
 
+void ABattleMobaGameMode::StartRespawnTimer(ABattleMobaPlayerState* ps)
+{
+	FTimerDelegate FunctionsName;
+	
+	//FunctionsName = FTimerDelegate::CreateUObject(this, &ATodakBattleArenaCharacter::UpdateHealthStatusBar, EBarType::PrimaryProgressBar);
+	FunctionsName = FTimerDelegate::CreateUObject(this, &ABattleMobaGameMode::RespawnTimerCount, &ps->RespawnHandle, ps);
+			
+	UE_LOG(LogTemp, Warning, TEXT("RespawnTimer started!"));
+	GetWorld()->GetTimerManager().SetTimer(ps->RespawnHandle, FunctionsName, 1.0f, true);
+}
+
+void ABattleMobaGameMode::RespawnTimerCount(FTimerHandle* RespawnHandle, ABattleMobaPlayerState* ps)
+{
+	if (ps->RespawnTimeCounter >= 1)
+	{
+		ps->RespawnTimeCounter -= 1;
+		ps->DisplayRespawnTime();
+	}
+	else
+	{
+		ps->RespawnTimeCounter = 29;
+		ps->DisplayRespawnTime();
+		this->GetWorldTimerManager().ClearTimer(*RespawnHandle);
+	}
+}
+
 bool ABattleMobaGameMode::RespawnRequested_Validate(APlayerController* playerController, FTransform SpawnTransform)
 {
 	return true;
@@ -245,6 +271,11 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 	{
 		if (HasAuthority())
 		{
+			//destroys existing pawn before spawning a new one
+			if (playerController->GetPawn() != nullptr)
+			{
+				playerController->GetPawn()->Destroy();
+			}
 			ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(playerController->PlayerState);
 			{
 				//Spawn actor
@@ -261,18 +292,9 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 
 						UGameplayStatics::FinishSpawningActor(pawn, FTransform(SpawnTransform.Rotator(), SpawnTransform.GetLocation()));
 					}
-
-					FTimerHandle handle;
-					FTimerDelegate TimerDelegate;
-
-					//Possess a pawn
-					TimerDelegate.BindLambda([playerController, pawn]()
-					{
-						UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE POSSESSING A PAWN"));
-						playerController->Possess(pawn);
-						playerController->ClientSetRotation(pawn->GetActorRotation());
-					});
-					this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.2f, false);
+					//possess and set new rotation for newly spawned pawn
+					playerController->Possess(pawn);
+					playerController->ClientSetRotation(pawn->GetActorRotation());
 				}
 			}
 		}

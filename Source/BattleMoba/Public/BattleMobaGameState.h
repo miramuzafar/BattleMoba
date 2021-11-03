@@ -48,6 +48,12 @@ public:
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Clock")
 		FString Winner;
 
+public: 
+	
+	////For displaying respawn time count
+	//UFUNCTION(BlueprintImplementableEvent, Category = "Damage")
+	//	void DisplayRespawnTime();
+
 	//Change local tower progressbar color
 	UFUNCTION()
 		void SetTowerWidgetColors(ABattleMobaCTF* cf);

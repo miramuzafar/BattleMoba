@@ -7,6 +7,7 @@
 #include "Net/UnrealNetwork.h"
 #include "BattleMobaPC.generated.h"
 
+class ABattleMobaGameMode;
 /**
  * 
  */
@@ -24,10 +25,37 @@ public:
 
 	virtual void BeginPlay() override;
 
+	UPROPERTY()
+	ABattleMobaGameMode* GM;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Spectator")
+		int32 currentPlayer;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Spectator")
+	ABattleMobaPC* CurrSpectator;
+
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ID")
 		int32 pi;
 
 	//RequestRespawn
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Respawn")
 	void RespawnPawn(FTransform SpawnTransform);
+
+protected:
+	
+	//spectator pi
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "SpectID")
+		int32 SpectPI;
+
+	UFUNCTION(BlueprintPure, Category = "Increment")
+		static int32 CheckIndexValidity(int32 index, TArray<ABattleMobaPC*> PlayerList, EFormula SwitchMode);
+
+	//RequestSpectator
+	UFUNCTION(BlueprintCallable, Reliable, Server, WithValidation, Category = "Spectator")
+		void SetupSpectator(EFormula SwitchMode);
+
+	//SpectatorMode
+	UFUNCTION(Reliable, Server, WithValidation, Category = "Spectator")
+		void SpectateNextPlayer(const TArray<ABattleMobaPC*>& PlayerList, EFormula SwitchMode);
+
 };

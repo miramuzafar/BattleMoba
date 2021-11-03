@@ -6,6 +6,7 @@
 #include "Math/UnrealMathUtility.h"
 #include "Kismet/KismetTextLibrary.h"
 #include "Components/WidgetComponent.h"
+#include "DrawDebugHelpers.h"
 
 FDateTime UInputLibrary::GetCurrentDateAndTime()
 {
@@ -124,22 +125,43 @@ void UInputLibrary::Distance_Sort(UPARAM()TArray<AActor*> Array_To_Sort, UPARAM(
 
 void UInputLibrary::SetUIVisibility(UWidgetComponent* widget, AActor* FromActor)
 {
-	FHitResult Hit(ForceInit);
-
-	if (UGameplayStatics::GetPlayerCameraManager(FromActor, 0))
+	//only run on client and server
+	if (FromActor->GetNetMode() != ENetMode::NM_DedicatedServer)
 	{
-		FVector start = FromActor->GetActorLocation();
-		FVector End = UGameplayStatics::GetPlayerCameraManager(FromActor, 0)->GetCameraLocation();
-		FCollisionQueryParams CollisionParams;
-		CollisionParams.AddIgnoredActor(FromActor);
+		FHitResult Hit(ForceInit);
 
-		if (FromActor->GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams))
+		if (UGameplayStatics::GetPlayerCameraManager(FromActor, 0))
 		{
-			widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
-		}
-		else
-		{
-			widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
+			FVector start = widget->GetComponentLocation();
+			FVector End = UGameplayStatics::GetPlayerCameraManager(FromActor, 0)->GetCameraLocation();
+			FCollisionQueryParams CollisionParams;
+			CollisionParams.AddIgnoredActor(FromActor);
+
+			DrawDebugBox(FromActor->GetWorld(), widget->GetComponentLocation(), FVector(widget->GetCurrentDrawSize().X / 10.0f, widget->GetCurrentDrawSize().Y / 10.0f, (widget->GetCurrentDrawSize().Y / 10.0f) / 4.0f), FColor::Magenta);
+
+			//Set box collision size
+			FCollisionShape BoxCol = FCollisionShape::MakeBox(FVector(widget->GetCurrentDrawSize().X/10.0f, widget->GetCurrentDrawSize().Y/10.0f,(widget->GetCurrentDrawSize().Y/10.0f)/4.0f));
+
+			if (FromActor->GetWorld()->SweepSingleByChannel(Hit, start, End, FQuat::Identity, ECC_Visibility, BoxCol, CollisionParams))
+			{
+
+				widget->SetVisibility(false);
+			}
+			else
+			{
+				widget->SetVisibility(true);
+			}
+
+			//if (FromActor->GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams) && (Hit.Distance > 100.0f))
+			//{
+			//	widget->SetVisibility(false);
+			//	//widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
+			//}
+			//else
+			//{
+			//	widget->SetVisibility(true);
+			//	//widget->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
+			//}
 		}
 	}
 }
