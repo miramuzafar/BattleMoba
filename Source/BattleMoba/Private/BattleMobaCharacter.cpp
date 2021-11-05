@@ -252,13 +252,7 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	/*ABattleMobaPlayerState* newPS = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
-	if (newPS)
-	{
-		newPS->RespawnTimeCounter = 30;
-	}
-*/
+
 	this->GetMesh()->SetSkeletalMesh(CharMesh, false);
 	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
@@ -270,6 +264,17 @@ void ABattleMobaCharacter::BeginPlay()
 	{
 		this->GetMesh()->SetVisibility(true);
 		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+
+		/*APlayerController* pc = Cast<APlayerController>(this->GetController());
+		if (pc)
+		{
+			if (pc->IsLocalPlayerController() && pc->GetNetMode() != ENetMode::NM_DedicatedServer)
+			{
+
+				pc->bShowMouseCursor = false;
+				pc->SetInputMode(FInputModeGameOnly());
+			}
+		}*/
 	});
 	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
 
@@ -576,7 +581,7 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					{
 						if (gm)
 						{
-							gm->PlayerKilled(ps, this->DamageDealers.Last(), DamageDealers);
+							gm->PlayerKilled(ps, this->DamageDealers.Last(), DamageDealers); //Set current team scores and kills
 						}
 					});
 
@@ -1056,10 +1061,17 @@ void ABattleMobaCharacter::RespawnCharacter_Implementation()
 	ABattleMobaPC* PC = Cast<ABattleMobaPC>(UGameplayStatics::GetPlayerController(this, 0));
 	if (PC)
 	{
+		//Set current input to interact with UI in spectator mode
+		if (PC->IsLocalPlayerController() && PC->GetNetMode() != ENetMode::NM_DedicatedServer)
+		{
+			PC->bShowMouseCursor = true;
+			PC->SetInputMode(FInputModeGameAndUI());
+		}
 		ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(PC->PlayerState);
 		if (PS)
 		{
-			PS->RespawnTimeCounter = PS->RespawnTimeCounter - 1;
+			PS->RespawnTimeCounter -= 1;
+			PS->DisplayRespawnTime();
 			PC->RespawnPawn(PS->SpawnTransform);
 			PC->UnPossess();
 		}

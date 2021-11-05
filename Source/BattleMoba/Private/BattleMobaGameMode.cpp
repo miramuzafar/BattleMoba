@@ -40,7 +40,6 @@ void ABattleMobaGameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 void ABattleMobaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-	Chars = CharSelections;
 
 	//sETTING UP GAME STATE
 	GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
@@ -89,25 +88,28 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 				if (GState)
 				{
 					PS->Pi = Players.Num() - 1;
-					//PS->SetPlayerIndex(PS->Pi);
+					
+					//set mesh array into temp array
+					Chars = CharSelections;
+
 					//Random unique number for character mesh array
 					if (Chars.IsValidIndex(0))
 					{
 						CharIndex = FMath::RandRange(0, Chars.Num() - 1);
-						PS->CharMesh = Chars[CharIndex];
-						Chars.RemoveAtSwap(CharIndex);
+						//PS->CharMesh = Chars[CharIndex];
 						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
 					}
 					if ((PS->Pi) < 4)
 					{
 						GState->TeamA.Add(PS->GetPlayerName());
-						SpawnBasedOnTeam("Radiant");
+						SpawnBasedOnTeam("Radiant", Chars[CharIndex]);
 					}
 					else
 					{
 						GState->TeamB.Add(PS->GetPlayerName());
-						SpawnBasedOnTeam("Dire");
+						SpawnBasedOnTeam("Dire", Chars[CharIndex]);
 					}
+					Chars.RemoveAtSwap(CharIndex);
 				}
 			}
 		}
@@ -149,39 +151,42 @@ void ABattleMobaGameMode::StartClock()
 //	return true;
 //}
 
-void ABattleMobaGameMode::SpawnBasedOnTeam/*_Implementation*/(FName TeamName)
+void ABattleMobaGameMode::SpawnBasedOnTeam/*_Implementation*/(FName TeamName, USkeletalMesh* CharMesh)
 {
 	ABattleMobaPlayerState* PS = Cast <ABattleMobaPlayerState>(newPlayer->PlayerState);
 	if (PS)
 	{
-		PS->TeamName = TeamName;
-
-		/*for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		if (HasAuthority())
 		{
-			APlayerStart* currentPlayerStart = *It;
-			if (currentPlayerStart->PlayerStartTag == FName(*FString::FromInt(PS->Pi)))
+			PS->TeamName = TeamName;
+			PS->CharMesh = CharMesh;
+
+			AActor* PStart = FindPlayerStart(newPlayer, FString::FromInt(PS->Pi));
+
+			//destroys existing pawn before spawning a new one
+			if (newPlayer->GetPawn() != nullptr)
 			{
-				PStart = currentPlayerStart;
-				break;
+				newPlayer->GetPawn()->Destroy();
 			}
-		}*/
-		AActor* PStart = FindPlayerStart(newPlayer, FString::FromInt(PS->Pi));
 
-		ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, PStart->GetActorTransform());
-		if (pawn)
-		{
-			pawn->PlayerName = PS->GetPlayerName();
-			pawn->TeamName = PS->TeamName;
+			ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, PStart->GetActorTransform(), nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+			if (pawn)
+			{
+				pawn->PlayerName = PS->GetPlayerName();
+				pawn->TeamName = PS->TeamName;
 
-			pawn->CharMesh = PS->CharMesh;
-			PS->SpawnTransform = PStart->GetActorTransform();
-			UGameplayStatics::FinishSpawningActor(pawn, FTransform(PStart->GetActorRotation(), PStart->GetActorLocation()));
+				pawn->CharMesh = PS->CharMesh;
+				PS->SpawnTransform = PStart->GetActorTransform();
+				UGameplayStatics::FinishSpawningActor(pawn, FTransform(PStart->GetActorRotation(), PStart->GetActorLocation()));
 
-			newPlayer->Possess(pawn);
-			newPlayer->ClientSetRotation(PStart->GetActorRotation());
-			//newPlayer->DisableInput(newPlayer);
+				newPlayer->Possess(pawn);
+				newPlayer->ClientSetRotation(PStart->GetActorRotation());
+
+				newPlayer->bShowMouseCursor = false;
+				newPlayer->SetInputMode(FInputModeGameOnly());
+				//newPlayer->DisableInput(newPlayer);
+			}
 		}
-
 	}
 }
 
@@ -254,7 +259,7 @@ void ABattleMobaGameMode::RespawnTimerCount(FTimerHandle* RespawnHandle, ABattle
 	}
 	else
 	{
-		ps->RespawnTimeCounter = 29;
+		ps->RespawnTimeCounter = 30;
 		ps->DisplayRespawnTime();
 		this->GetWorldTimerManager().ClearTimer(*RespawnHandle);
 	}
@@ -282,7 +287,7 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 				if (SpawnedActor)
 				{
 					//Spawn actor from SpawnedActor subclass
-					ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, SpawnTransform);
+					ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, SpawnTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
 					if (pawn)
 					{
 						//Assign team and player name before finish spawning
@@ -291,10 +296,13 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 						pawn->CharMesh = PS->CharMesh;
 
 						UGameplayStatics::FinishSpawningActor(pawn, FTransform(SpawnTransform.Rotator(), SpawnTransform.GetLocation()));
+
+						//possess and set new rotation for newly spawned pawn
+						playerController->Possess(pawn);
+						playerController->ClientSetRotation(pawn->GetActorRotation());
+						playerController->bShowMouseCursor = false;
+						playerController->SetInputMode(FInputModeGameOnly());
 					}
-					//possess and set new rotation for newly spawned pawn
-					playerController->Possess(pawn);
-					playerController->ClientSetRotation(pawn->GetActorRotation());
 				}
 			}
 		}

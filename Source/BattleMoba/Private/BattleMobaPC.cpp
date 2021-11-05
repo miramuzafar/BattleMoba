@@ -79,18 +79,14 @@ void ABattleMobaPC::SpectateNextPlayer_Implementation(const TArray<ABattleMobaPC
 			ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(PlayerList[i]->PlayerState);
 			if (ps->TeamName == thisps->TeamName)
 			{
-				count += 1;
-				if (count > 0)
-				{
-					x = true;
-					break;
-				}
+				x = true;
+				break;
 			}
 		}
 	}
 	
 	//Is eligible to spectate??
-	if (x == true && count > 0)
+	if (x == true)
 	{
 	loop:
 		currentPlayer = CheckIndexValidity(currentPlayer, PlayerList, SwitchMode); //check if next spectated player is exist in an array

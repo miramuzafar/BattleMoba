@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerState.h"
 #include "BattleMobaPlayerState.generated.h"
 
+class USkeletalMesh;
 /**
  * 
  */
@@ -33,7 +34,7 @@ public:
 	int Assist = 0;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
-	class USkeletalMesh* CharMesh;
+	USkeletalMesh* CharMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
 	FTransform SpawnTransform;
@@ -42,7 +43,7 @@ public:
 		int ChiOrbs = 0;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Item")
-		int RespawnTimeCounter = 29;
+		int RespawnTimeCounter = 30;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Respawn")
 	FTimerHandle RespawnHandle;
