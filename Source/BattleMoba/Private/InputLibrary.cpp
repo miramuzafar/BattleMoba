@@ -137,7 +137,7 @@ void UInputLibrary::SetUIVisibility(UWidgetComponent* widget, AActor* FromActor)
 			FCollisionQueryParams CollisionParams;
 			CollisionParams.AddIgnoredActor(FromActor);
 
-			DrawDebugBox(FromActor->GetWorld(), widget->GetComponentLocation(), FVector(widget->GetCurrentDrawSize().X / 10.0f, widget->GetCurrentDrawSize().Y / 10.0f, (widget->GetCurrentDrawSize().Y / 10.0f) / 4.0f), FColor::Magenta);
+			//DrawDebugBox(FromActor->GetWorld(), widget->GetComponentLocation(), FVector(widget->GetCurrentDrawSize().X / 10.0f, widget->GetCurrentDrawSize().Y / 10.0f, (widget->GetCurrentDrawSize().Y / 10.0f) / 4.0f), FColor::Magenta);
 
 			//Set box collision size
 			FCollisionShape BoxCol = FCollisionShape::MakeBox(FVector(widget->GetCurrentDrawSize().X/10.0f, widget->GetCurrentDrawSize().Y/10.0f,(widget->GetCurrentDrawSize().Y/10.0f)/4.0f));

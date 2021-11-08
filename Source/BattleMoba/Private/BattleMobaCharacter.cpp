@@ -1309,12 +1309,20 @@ void ABattleMobaCharacter::SafeZoneMulticast_Implementation(ABMobaTriggerCapsule
 
 void ABattleMobaCharacter::ControlFlagMode(ABattleMobaCTF* cf)
 {
+	if (cf->isCompleted == false)
+	{
+		ABattleMobaGameState* thisGS = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+		if (thisGS)
+		{
+			thisGS->SetTowerWidgetColors(cf);
+		}
+	}
+
 	if (this->IsLocallyControlled())
 	{
 		//Run server Control Flag
 		ControlFlagServer(cf);
 	}
-	
 }
 
 bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF * cf)
@@ -1322,7 +1330,7 @@ bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF * cf)
 	return true;
 }
 
-void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF * cf)
+void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF* cf)
 {
 	if (cf->RadiantControl > 0 && cf->DireControl == 0)
 	{
@@ -1346,7 +1354,6 @@ void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF * cf)
 	cf->RadiantControl = 0;
 	cf->DireControl = 0;
 	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current CTF Team is %s"), ((*CTFteam.ToString()))));
-	
 }
 
 bool ABattleMobaCharacter::ControlFlagMulticast_Validate(ABattleMobaCTF* cf, FName Team)
@@ -1413,15 +1420,6 @@ void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF* c
 		}
 
 		cf->OnRep_Val();
-	}
-
-	if (cf->isCompleted == false)
-	{
-		ABattleMobaGameState* thisGS = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
-		if (thisGS)
-		{
-			thisGS->SetTowerWidgetColors(cf);
-		}
 	}
 }
 
