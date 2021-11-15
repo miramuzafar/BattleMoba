@@ -9,11 +9,30 @@
 
 class UWidgetComponent;
 
+//For logging purposes
+#define GETENUMSTRING(etype, evalue) ( (FindObject<UEnum>(ANY_PACKAGE, TEXT(etype), true) != nullptr) ? FindObject<UEnum>(ANY_PACKAGE, TEXT(etype), true)->GetNameStringByIndex((int32)evalue) : FString("Invalid - are you sure enum uses UENUM() macro?") )
+
+//Input Touch Type
+UENUM(BlueprintType)
+enum class EInputType : uint8
+{
+	Pressed,
+	Released,
+	Hold
+};
+
 UENUM(BlueprintType)
 enum class EFormula : uint8
 {
 	Addition,
 	Subtraction
+};
+
+UENUM(BlueprintType)
+enum class EResult : uint8
+{
+	Cooldown,
+	Translate
 };
 
 USTRUCT(BlueprintType)
@@ -50,6 +69,10 @@ struct FActionSkill : public FTableRowBase
 	//Get key
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		FKey keys;
+
+	//Get button name for mobile
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+		FString ButtonName;
 
 	//Anim to be played on key pressed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
@@ -146,4 +169,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Displays") //Hide 3D widget behind building etc
 		static void SetUIVisibility(UWidgetComponent* widget, AActor* FromActor);
+
+	UFUNCTION(BlueprintPure, Category = "Math|Gesture Utils")
+		static void AbsoluteValueOfTwoVectors(FVector2D StartValue, FVector2D EndValue, float & x, float & y, float & AbsX, float & AbsY);
+
+	//Check if current point is on the left side of the screen
+	static bool PointOnLeftHalfOfScreen(FVector2D Point);
+
+	//Detect linear swipe
+	static bool DetectLinearSwipe(FVector2D Line1Start, FVector2D Line1End, EInputType& Branches, bool Dos);
 };
