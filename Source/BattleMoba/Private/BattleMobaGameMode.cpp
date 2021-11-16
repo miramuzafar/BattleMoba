@@ -70,6 +70,9 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 
 	newPlayer = NewPlayer;
 
+	//set mesh array into temp array
+	Chars = CharSelections;
+
 	if (HasAuthority())
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("Player Added : %s"), *newPlayer->GetFName().ToString()));
@@ -89,27 +92,24 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 				{
 					PS->Pi = Players.Num() - 1;
 					
-					//set mesh array into temp array
-					Chars = CharSelections;
-
 					//Random unique number for character mesh array
-					if (Chars.IsValidIndex(0))
+					if (Chars.Num() > 0)
 					{
 						CharIndex = FMath::RandRange(0, Chars.Num() - 1);
 						//PS->CharMesh = Chars[CharIndex];
 						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
+						if ((PS->Pi) < 4)
+						{
+							GState->TeamA.Add(PS->GetPlayerName());
+							SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
+						}
+						else
+						{
+							GState->TeamB.Add(PS->GetPlayerName());
+							SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
+						}
+						Chars.RemoveAtSwap(CharIndex);
 					}
-					if ((PS->Pi) < 4)
-					{
-						GState->TeamA.Add(PS->GetPlayerName());
-						SpawnBasedOnTeam("Radiant", Chars[CharIndex]);
-					}
-					else
-					{
-						GState->TeamB.Add(PS->GetPlayerName());
-						SpawnBasedOnTeam("Dire", Chars[CharIndex]);
-					}
-					Chars.RemoveAtSwap(CharIndex);
 				}
 			}
 		}

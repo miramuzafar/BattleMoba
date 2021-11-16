@@ -165,3 +165,151 @@ void UInputLibrary::SetUIVisibility(UWidgetComponent* widget, AActor* FromActor)
 		}
 	}
 }
+
+bool UInputLibrary::PointOnLeftHalfOfScreen(FVector2D Point)
+{
+	const FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
+	const FVector2D ViewportCenter = FVector2D(ViewportSize.X / 2, ViewportSize.Y / 2);
+
+	return (Point.X <= ViewportCenter.X);
+}
+
+void UInputLibrary::AbsoluteValueOfTwoVectors(FVector2D StartValue, FVector2D EndValue, float& x, float& y, float& AbsX, float& AbsY)
+{
+	FVector2D Total = StartValue - EndValue;
+
+	x = Total.X;
+	y = Total.Y;
+
+	AbsX = FGenericPlatformMath::Abs(Total.X);
+	AbsY = FGenericPlatformMath::Abs(Total.Y);
+}
+
+bool UInputLibrary::DetectLinearSwipe(FVector2D Line1Start, FVector2D Line1End, EInputType& Branches, bool Dos)
+{
+	//if (!Dos)
+	//{
+	//	float x;
+	//	float y;
+
+	//	float AbsX;
+	//	float AbsY;
+
+	//	//Subtract start vector with current vector
+	//	FVector2D SubVect = Line1End - Line1Start;
+
+	//	UInputLibrary::AbsoluteValueOfTwoVectors(Line1Start, Line1End, x, y, AbsX, AbsY);
+
+	//	if (SubVect.Size() > 50.0f)
+	//	{
+	//		//get angle 
+	//		float TotalAngle = UKismetMathLibrary::DegAtan2(SubVect.X, SubVect.Y);
+
+	//		UE_LOG(LogTemp, Warning, TEXT("Total Angle : %f"), TotalAngle);
+
+	//		if (AbsX > AbsY)
+	//		{
+	//			if (x > 50.0f)
+	//			{
+	//				if (UKismetMathLibrary::InRange_FloatFloat(TotalAngle, -157.5f, -112.5f))
+	//				{
+	//					Branches = EInputType::UpLeft;
+	//					UE_LOG(LogTemp, Warning, TEXT("Up Left"));
+	//					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("%s"), *GETENUMSTRING("EInputType", Branches)));
+	//					return true;
+	//				}
+	//				if (UKismetMathLibrary::InRange_FloatFloat(TotalAngle, -67.5f, -22.5f))
+	//				{
+	//					Branches = EInputType::DownLeft;
+	//					UE_LOG(LogTemp, Warning, TEXT("Down Left"));
+	//					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("%s"), *GETENUMSTRING("EInputType", Branches)));
+	//					return true;
+	//				}
+	//				else
+	//				{
+	//					Branches = EInputType::Left;
+	//					UE_LOG(LogTemp, Warning, TEXT("Left"));
+	//					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("%s"), *GETENUMSTRING("EInputType", Branches)));
+	//					return true;
+	//				}
+	//			}
+	//			else if (x < -50.0f)
+	//			{
+	//				if (UKismetMathLibrary::InRange_FloatFloat(TotalAngle, 112.5f, 157.5f))
+	//				{
+	//					Branches = EInputType::UpRight;
+	//					UE_LOG(LogTemp, Warning, TEXT("Up Right"));
+	//					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("%s"), *GETENUMSTRING("EInputType", Branches)));
+	//					return true;
+	//				}
+	//				else if (UKismetMathLibrary::InRange_FloatFloat(TotalAngle, 22.5f, 67.5f))
+	//				{
+	//					Branches = EInputType::DownRight;
+	//					UE_LOG(LogTemp, Warning, TEXT("Down Right"));
+	//					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("%s"), *GETENUMSTRING("EInputType", Branches)));
+	//					return true;
+	//				}
+	//				else
+	//				{
+	//					Branches = EInputType::Right;
+	//					UE_LOG(LogTemp, Warning, TEXT("Right"));
+	//					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("%s"), *GETENUMSTRING("EInputType", Branches)));
+	//					return true;
+	//				}
+	//			}
+	//		}
+	//		if (AbsY > AbsX)
+	//		{
+	//			if (y > 50.0f)
+	//			{
+	//				if (UKismetMathLibrary::InRange_FloatFloat(TotalAngle, -157.5f, -112.5f))
+	//				{
+	//					Branches = EInputType::UpLeft;
+	//					UE_LOG(LogTemp, Warning, TEXT("Up Left"));
+	//					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("%s"), *GETENUMSTRING("EInputType", Branches)));
+	//					return true;
+	//				}
+	//				else if (UKismetMathLibrary::InRange_FloatFloat(TotalAngle, 112.5f, 157.5f))
+	//				{
+	//					Branches = EInputType::UpRight;
+	//					UE_LOG(LogTemp, Warning, TEXT("Up Right"));
+	//					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("%s"), *GETENUMSTRING("EInputType", Branches)));
+	//					return true;
+	//				}
+	//				else
+	//				{
+	//					Branches = EInputType::Up;
+	//					UE_LOG(LogTemp, Warning, TEXT("Up"));
+	//					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("%s"), *GETENUMSTRING("EInputType", Branches)));
+	//					return true;
+	//				}
+	//			}
+	//			else if (y < -50.0f)
+	//			{
+	//				if (UKismetMathLibrary::InRange_FloatFloat(TotalAngle, -67.5f, -22.5f))
+	//				{
+	//					Branches = EInputType::DownLeft;
+	//					UE_LOG(LogTemp, Warning, TEXT("Down Left"));
+	//					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("%s"), *GETENUMSTRING("EInputType", Branches)));
+	//					return true;
+	//				}
+	//				else if (UKismetMathLibrary::InRange_FloatFloat(TotalAngle, 22.5f, 67.5f))
+	//				{
+	//					Branches = EInputType::DownRight;
+	//					UE_LOG(LogTemp, Warning, TEXT("Down Right"));
+	//					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("%s"), *GETENUMSTRING("EInputType", Branches)));
+	//					return true;
+	//				}
+	//				else
+	//				{
+	//					Branches = EInputType::Down;
+	//					UE_LOG(LogTemp, Warning, TEXT("Down"));
+	//					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("%s"), *GETENUMSTRING("EInputType", Branches)));
+	//					return true;
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
+	return false;
+}
