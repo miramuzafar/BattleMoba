@@ -1378,14 +1378,13 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target)
 
 			//To avoid overlapping actors
 			//Multiply by Radius and divided by distance
-			FromOriginToTarget *= this->GetCapsuleComponent()->GetUnscaledCapsuleRadius() / this->GetDistanceTo(Target);
+			FromOriginToTarget *= RotateRadius / this->GetDistanceTo(Target);
 
 			//Locate player position based of the radius size
 			UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
 		}
 		else
 		{
-			//this->SetActorRotation(RotateTo);
 			UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), this->GetCapsuleComponent()->GetComponentLocation(), RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
 		}
 		closestActor = nullptr;
