@@ -1367,11 +1367,28 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target)
 		FRotator RotateTo = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, LookRotation.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
 		//FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), RotateTo, this->GetWorld()->GetDeltaSeconds(), 100.0f);
 
-		//this->SetActorRotation(RotateTo);
-		UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), this->GetCapsuleComponent()->GetComponentLocation(), RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+		//Check for Character to move the component target, else just rotate
+		ABattleMobaCharacter* characterActor = Cast<ABattleMobaCharacter>(Target);
+
+		//If the distance between two character is outside range
+		if (this->GetDistanceTo(Target) > RotateRadius && characterActor)
+		{
+			//Get Vector from player minus target
+			FVector FromOriginToTarget = this->GetActorLocation() - Target->GetActorLocation();
+
+			//To avoid overlapping actors
+			//Multiply by Radius and divided by distance
+			FromOriginToTarget *= this->GetCapsuleComponent()->GetUnscaledCapsuleRadius() / this->GetDistanceTo(Target);
+
+			//Locate player position based of the radius size
+			UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+		}
+		else
+		{
+			//this->SetActorRotation(RotateTo);
+			UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), this->GetCapsuleComponent()->GetComponentLocation(), RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+		}
 		closestActor = nullptr;
-
-
 	}
 }
 
