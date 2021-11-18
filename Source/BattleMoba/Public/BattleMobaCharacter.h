@@ -42,10 +42,46 @@ class ABattleMobaCharacter : public ACharacter
 		class USphereComponent* ViewDistanceCol;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
-		class UCapsuleComponent* LeftKickCol;
+		class UBoxComponent* LeftKickCol;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
-		class UCapsuleComponent* RightKickCol;
+		class UBoxComponent* LKC1;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* LKC2;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* LKC3;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* LKC4;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* LKC5;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* LKC6;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RightKickCol;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RKC1;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RKC2;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RKC3;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RKC4;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RKC5;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RKC6;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 		class UArrowComponent* LKickArrow;
@@ -54,10 +90,46 @@ class ABattleMobaCharacter : public ACharacter
 		class UArrowComponent* RKickArrow;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
-		class UCapsuleComponent* LeftPunchCol;
+		class UBoxComponent* LeftPunchCol;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
-		class UCapsuleComponent* RightPunchCol;
+		class UBoxComponent* LPC1;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* LPC2;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* LPC3;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* LPC4;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* LPC5;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* LPC6;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RightPunchCol;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RPC1;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RPC2;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RPC3;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RPC4;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RPC5;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* RPC6;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 		class UArrowComponent* LPunchArrow;
@@ -220,10 +292,10 @@ protected:
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		bool IsHit;
 
-	UPROPERTY(EditDefaultsOnly, Category = "HitReaction")
+	UPROPERTY(EditDefaultsOnly, Replicated, Category = "HitReaction")
 		bool IsStunned = false;
 
-	UPROPERTY(EditDefaultsOnly, Category = "HitReaction")
+	UPROPERTY(EditDefaultsOnly, Replicated, Category = "HitReaction")
 		bool OnSpecialAttack = false;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Anim")
@@ -247,6 +319,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Rotate")
 		TArray<AActor*> FoundActors;
 
+	UPROPERTY(BlueprintReadOnly, Category = "HitReaction")
+		TArray<AActor*> HitActorsFound;
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FVector AttackerLocation;
@@ -292,9 +366,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
 		FTimerHandle RespawnTimer;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
-		bool bEnableMove = true;
-
 	UPROPERTY(VisibleAnywhere, Category = "Anim")
 		UBattleMobaAnimInstance* AnimInsta;
 
@@ -326,8 +397,39 @@ protected:
 		TArray<class AActor*> IgnoreActors;
 
 	UPROPERTY()
-	TArray<ABattleMobaCTF*> Towers;
+	TArray<class ABattleMobaCTF*> Towers;
 
+	UPROPERTY()
+	TArray<class UBoxComponent*> ActiveColliders;
+
+	UPROPERTY()
+	TArray<class ABattleMobaCharacter*> ArrDamagedEnemy;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "HitReaction")
+	FTimerHandle AttackTimer;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+		FVector AttackCol1;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+		FVector AttackCol2;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+		FVector AttackCol3;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+		FVector AttackCol4;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+		FVector AttackCol5;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+		FVector AttackCol6;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+		bool bApplyHitTrace = true;
+
+	FCollisionQueryParams AttackTraceParams;
 		TEnumAsByte<ETouchIndex::Type> MoveTouchIndex;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -340,6 +442,8 @@ protected:
 
 	virtual void BeginPlay() override;
 	// End of APawn interface
+
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 	virtual void Tick(float DeltaTime) override;
 
@@ -386,9 +490,18 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "CollisionSetup")
 		void OffCombatColl(UCapsuleComponent* CombatColl);
 
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
+		void CallAttackTrace(bool isStart, int switcher);
+
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
+		void AttackTrace(bool traceStart, int activeAttack);
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "HitReaction")
+		void HitResult(FHitResult hit);
+
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void FireTrace(FVector StartPoint, FVector EndPoint, bool Head);
+		void FireTrace(UBoxComponent* Col1, UBoxComponent* Col2, UBoxComponent* Col3, UBoxComponent* Col4, UBoxComponent* Col5, UBoxComponent* Col6);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "HitReaction")
 		void DoDamage(AActor* HitActor);
@@ -470,6 +583,8 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Effects")
 		void CombatCamShake();
+
+	
 
 public:
 	/** Returns CameraBoom subobject **/
