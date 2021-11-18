@@ -66,13 +66,8 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, RotateToActor);
 	DOREPLIFETIME(ABattleMobaCharacter, IsStunned);
 	DOREPLIFETIME(ABattleMobaCharacter, OnSpecialAttack);
-	DOREPLIFETIME(ABattleMobaCharacter, AttackTimer);
-	DOREPLIFETIME(ABattleMobaCharacter, AttackCol1);
-	DOREPLIFETIME(ABattleMobaCharacter, AttackCol2);
-	DOREPLIFETIME(ABattleMobaCharacter, AttackCol3);
-	DOREPLIFETIME(ABattleMobaCharacter, AttackCol4);
-	DOREPLIFETIME(ABattleMobaCharacter, AttackCol5);
-	DOREPLIFETIME(ABattleMobaCharacter, AttackCol6);
+	DOREPLIFETIME(ABattleMobaCharacter, ActiveColliders);
+	DOREPLIFETIME(ABattleMobaCharacter, ArrDamagedEnemy);
 	DOREPLIFETIME(ABattleMobaCharacter, bApplyHitTrace);
 }
 
@@ -87,10 +82,6 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 	//this->GetMesh()->SetVisibility(false);
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-
-	// Create Sphere Component
-	ViewDistanceCol = CreateDefaultSubobject<USphereComponent>(TEXT("ViewDistCol"));
-	ViewDistanceCol->SetupAttachment(RootComponent);
 
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
@@ -327,13 +318,6 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 
 	TraceDistance = 20.0f;
 
-	//TargetLock
-	ViewDistanceCol->SetSphereRadius(200.0f);
-
-	ViewDistanceCol->OnComponentBeginOverlap.AddDynamic(this, &ABattleMobaCharacter::OnBeginOverlap);
-	ViewDistanceCol->OnComponentEndOverlap.AddDynamic(this, &ABattleMobaCharacter::OnEndOverlap);
-
-	
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -392,9 +376,6 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	// handle touch devices
 	PlayerInputComponent->BindTouch(IE_Pressed, this, &ABattleMobaCharacter::TouchStarted);
 	PlayerInputComponent->BindTouch(IE_Released, this, &ABattleMobaCharacter::TouchStopped);
-
-	// VR headset functionality
-	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &ABattleMobaCharacter::OnResetVR);
 
 	//	Camera Shake test input
 	PlayerInputComponent->BindAction("TestCam", IE_Released, this, &ABattleMobaCharacter::OnCameraShake);
@@ -1927,42 +1908,6 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 	}
 }
 
-void ABattleMobaCharacter::OnCombatColl(UCapsuleComponent* CombatColl)
-{
-	CombatColl->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	CombatColl->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
-}
-
-void ABattleMobaCharacter::OffCombatColl(UCapsuleComponent * CombatColl)
-{
-	CombatColl->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	DoOnce = false;
-	TargetHead = false;
-}
-
-bool ABattleMobaCharacter::CallAttackTrace_Validate(bool isStart, int switcher)
-{
-	return true;
-}
-
-void ABattleMobaCharacter::CallAttackTrace_Implementation(bool isStart, int switcher)
-{
-	FTimerDelegate AttackTD;
-
-	if (isStart)
-	{
-		AttackTD.BindUFunction(this, FName("AttackTrace"), switcher);
-		GetWorld()->GetTimerManager().SetTimer(AttackTimer, AttackTD, 0.01f, true);
-		return;
-
-	}
-	else
-	{
-		GetWorld()->GetTimerManager().ClearTimer(AttackTimer);
-		ArrDamagedEnemy.Empty();
-	}
-}
-
 
 bool ABattleMobaCharacter::AttackTrace_Validate(bool traceStart, int activeAttack)
 {
@@ -1971,7 +1916,7 @@ bool ABattleMobaCharacter::AttackTrace_Validate(bool traceStart, int activeAttac
 
 void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activeAttack)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("Start Tracing? %s"), traceStart ? TEXT("True") : TEXT("False")));
+	//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("Start Tracing? %s"), traceStart ? TEXT("True") : TEXT("False")));
 
 	if (traceStart)
 	{
@@ -2059,16 +2004,44 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit)
 
 	ABattleMobaCharacter* DamagedEnemy;
 
+
 	int ArrayLength = HitActorsFound.Num();
 
 	for (uint8 i = 0; i < ArrayLength; ++i)
 	{
 		DamagedEnemy = Cast<ABattleMobaCharacter>(HitActorsFound[i]);
 
-		if (DamagedEnemy->TeamName != this->TeamName && (DamagedEnemy == hit.Actor) && !(ArrDamagedEnemy.Contains(DamagedEnemy)))
+		TowerActor = Cast<ADestructibleTower>(HitActorsFound[i]);
+
+		if (DamagedEnemy->TeamName != this->TeamName && (DamagedEnemy == hit.Actor) && !(ArrDamagedEnemy.Contains(DamagedEnemy)) && DamagedEnemy->InRagdoll == false)
 		{
-			ArrDamagedEnemy.Add(DamagedEnemy);
-			DoDamage(DamagedEnemy);
+			if (DamagedEnemy->AnimInsta->Montage_IsPlaying(DamagedEnemy->CounterMoveset))
+			{
+				if (DamagedEnemy->IsLocallyControlled())
+				{
+					ServerRotateHitActor(DamagedEnemy, this);
+					ServerCounterAttack(DamagedEnemy);
+				}
+			}
+
+			else
+			{
+				/**		set the hitActor hit movesets from the same row of skill moveset the attacker used*/
+				DamagedEnemy->HitReactionMoveset = this->HitReactionMoveset;
+				DamagedEnemy->FrontHitMoveset = this->FrontHitMoveset;
+				DamagedEnemy->BackHitMoveset = this->BackHitMoveset;
+				DamagedEnemy->LeftHitMoveset = this->LeftHitMoveset;
+				DamagedEnemy->RightHitMoveset = this->RightHitMoveset;
+				ArrDamagedEnemy.Add(DamagedEnemy);
+				DoDamage(DamagedEnemy);
+			}
+			
+		}
+
+		else if (TowerActor->TeamName != this->TeamName && TowerActor == hit.Actor && !(ArrDamagedEnemy.Contains(TowerActor)) && TowerActor->isDestroyed == false)
+		{
+			ArrDamagedEnemy.Add(TowerActor);
+			TowerReceiveDamage(TowerActor, this->BaseDamage);
 		}
 	}
 }
@@ -2236,11 +2209,6 @@ void ABattleMobaCharacter::ServerExecuteAction_Implementation(FActionSkill Selec
 }
 
 
-void ABattleMobaCharacter::OnResetVR()
-{
-	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
-}
-
 
 void ABattleMobaCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
@@ -2372,100 +2340,3 @@ void ABattleMobaCharacter::MoveRight(float Value)
 		}
 	}
 }
-//Check for overlapped enemy unit
-void ABattleMobaCharacter::OnBeginOverlap(UPrimitiveComponent* OverlappedActor, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	//if (OtherActor != this)
-	//{
-	//	ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(OtherActor);
-	//	ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(OtherActor);
-	//	if ((EnemyChar != nullptr && EnemyChar->Health >=0.0f && EnemyChar->TeamName != this->TeamName))
-	//	{
-	//		//FoundActors.AddUnique(OtherActor);
-	//		this->test = true;
-	//		//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Distance: %f"), this->GetHorizontalDistanceTo(EnemyChar)));
-	//	}
-	//	else if (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName)
-	//	{
-	//		this->test = true;
-	//	}
-	//}
-}
-
-void ABattleMobaCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedActor, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	//if (OtherActor != this)
-	//{
-	//	//this->test = false;
-	//	ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(OtherActor);
-	//	ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(OtherActor);
-	//	if ((EnemyChar != nullptr && EnemyChar->Health >= 0.0f && EnemyChar->TeamName != this->TeamName) || (EnemyTow != nullptr && EnemyTow->TeamName != this->TeamName))
-	//	{
-	//		if (this->GetHorizontalDistanceTo(EnemyChar) > ViewDistanceCol->GetScaledSphereRadius())
-	//		{
-	//			this->test = false;
-	//			//FoundActors.Remove(EnemyChar);
-	//			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Removed")));
-	//		}
-	//		else if (this->GetHorizontalDistanceTo(EnemyTow) > ViewDistanceCol->GetScaledSphereRadius())
-	//		{
-	//			this->test = false;
-	//			//FoundActors.Remove(EnemyChar);
-	//			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Removed")));
-	//		}
-	//	}
-	//}
-}
-
-void ABattleMobaCharacter::RotateToTargetSetup()
-{
-	//Distance actor struct
-	TArray<FActor_Dist> distcollection;
-
-	//Check for eligible character actors
-	for (auto& name : UGameplayStatics::GetGameState(GetWorld())->PlayerArray)
-	{
-		if (name->GetPawn() != nullptr && name->GetPawn()->IsActorBeingDestroyed() == false)
-		{
-			ABattleMobaCharacter* enemy = Cast<ABattleMobaCharacter>(name->GetPawn());
-			if (enemy != this && enemy->TeamName != this->TeamName)
-			{
-				FoundActors.AddUnique(enemy);
-			}
-		}
-	}
-	//Check for tower actors
-	for (TActorIterator<ADestructibleTower> It(GetWorld()); It; ++It)
-	{
-		ADestructibleTower* currentTower = *It;
-		if (currentTower->TeamName != this->TeamName)
-		{
-			FoundActors.AddUnique(currentTower);
-		}
-	}
-
-	//Look for closest target from an actor
-	UInputLibrary::Distance_Sort(FoundActors, this, false, distcollection);
-
-	ABattleMobaCharacter* EnemyChar = Cast<ABattleMobaCharacter>(distcollection[0].actor);
-	ADestructibleTower* EnemyTow = Cast<ADestructibleTower>(distcollection[0].actor);
-	if (distcollection[0].distance <= 200.0f)
-	{
-		if (EnemyChar || EnemyTow)
-		{
-			//set new closest actor to target
-			currentTarget = distcollection[0].actor;
-			FoundActors.Empty();
-			Rotate = true;
-			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is close")));
-		}
-		else
-		{
-			Rotate = false;
-			FoundActors.Empty();
-			currentTarget = NULL;
-			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("is not close")));
-		}
-	}
-}
-

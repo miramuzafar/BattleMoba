@@ -36,9 +36,6 @@ class ABattleMobaCharacter : public ACharacter
 	//Setting up character mesh for player
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, Meta = (AllowPrivateAccess = "true"))
 		class UStaticMeshComponent* Outline;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
-		class USphereComponent* ViewDistanceCol;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
 		class UBoxComponent* LeftKickCol;
@@ -178,9 +175,6 @@ public:
 
 protected:
 
-	/** Resets HMD orientation in VR. */
-	void OnResetVR();
-
 	/** Called for forwards/backward input */
 	void MoveForward(float Value);
 
@@ -315,7 +309,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Rotate")
 		TArray<AActor*> FoundActors;
 
-	UPROPERTY(BlueprintReadOnly, Category = "HitReaction")
+	UPROPERTY()
 		TArray<AActor*> HitActorsFound;
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
@@ -368,9 +362,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Destructible")
 		ADestructibleTower* TowerActor;
 
-	UPROPERTY(VisibleAnywhere, Category = "HitDetection")
-		ABattleMobaCharacter* TracedChar;
-
 	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category = "HitReaction")
 		UParticleSystem* HitEffect;
 
@@ -393,34 +384,14 @@ protected:
 		TArray<class AActor*> IgnoreActors;
 
 	UPROPERTY()
-	TArray<class ABattleMobaCTF*> Towers;
-
-	UPROPERTY()
-	TArray<class UBoxComponent*> ActiveColliders;
-
-	UPROPERTY()
-	TArray<class ABattleMobaCharacter*> ArrDamagedEnemy;
-
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "HitReaction")
-	FTimerHandle AttackTimer;
+		TArray<class ABattleMobaCTF*> Towers;
 
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
-		FVector AttackCol1;
+		TArray<class UBoxComponent*> ActiveColliders;
 
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
-		FVector AttackCol2;
+		TArray<class AActor*> ArrDamagedEnemy;
 
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
-		FVector AttackCol3;
-
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
-		FVector AttackCol4;
-
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
-		FVector AttackCol5;
-
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
-		FVector AttackCol6;
 
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
 		bool bApplyHitTrace = true;
@@ -450,18 +421,7 @@ protected:
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	UFUNCTION(BlueprintCallable, meta = (ExpandEnumAsExecs = Type))
-	void CheckSwipeType(EInputType Type, FVector2D Location, TEnumAsByte<ETouchIndex::Type> TouchIndex);
-
-	/** called when something enters the sphere component */
-	UFUNCTION()
-	void OnBeginOverlap(UPrimitiveComponent * OverlappedActor, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
-
-	/** called when something leaves the sphere component */
-	UFUNCTION()
-	void OnEndOverlap(UPrimitiveComponent * OverlappedActor, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex);
-
-	UFUNCTION()
-	void RotateToTargetSetup();
+	void CheckSwipeType(EInputType Type, FVector2D Location, TEnumAsByte<ETouchIndex::Type> TouchIndex);	
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Transformation")
 	void ServerRotateToCameraView(FRotator InRot);
@@ -477,17 +437,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "HUDSetup")
 	void HideHPBar();
-
-	//Get skills from input touch combo
-	UFUNCTION(BlueprintCallable, Category = "CollisionSetup")
-		void OnCombatColl(UCapsuleComponent* CombatColl);
-
-	//Get skills from input touch combo
-	UFUNCTION(BlueprintCallable, Category = "CollisionSetup")
-		void OffCombatColl(UCapsuleComponent* CombatColl);
-
-	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void CallAttackTrace(bool isStart, int switcher);
 
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void AttackTrace(bool traceStart, int activeAttack);
