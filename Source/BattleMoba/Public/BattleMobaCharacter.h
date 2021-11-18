@@ -208,10 +208,24 @@ protected:
 	/** Input call camera shake */
 	void OnCameraShake();
 
+
 protected:
 
 	//rain checks on action skills to be executed
 	bool ActionEnabled = true;
+
+	//Init Swipe mechanics
+	bool IsPressed = false;
+
+	//SwipeToRotate
+	bool StartRotate = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
+	bool InitRotateToggle = false;
+
+	FVector2D TouchStart;
+
+	FVector2D TouchEnd;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
 		float TraceDistance = 0.0f;
@@ -412,6 +426,11 @@ protected:
 		bool bApplyHitTrace = true;
 
 	FCollisionQueryParams AttackTraceParams;
+		TEnumAsByte<ETouchIndex::Type> MoveTouchIndex;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+		TEnumAsByte<ETouchIndex::Type> RotTouchIndex;
+
 
 protected:
 	// APawn interface
@@ -424,7 +443,14 @@ protected:
 
 	virtual void Tick(float DeltaTime) override;
 
+	void AddSwipeVectorToMovementInput();
+
+	void AddSwipeVectorToRotationInput();
+
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	UFUNCTION(BlueprintCallable, meta = (ExpandEnumAsExecs = Type))
+	void CheckSwipeType(EInputType Type, FVector2D Location, TEnumAsByte<ETouchIndex::Type> TouchIndex);
 
 	/** called when something enters the sphere component */
 	UFUNCTION()
@@ -510,10 +536,6 @@ protected:
 	UFUNCTION()
 		void ClearDamageDealers();
 
-	//Get skills from input touch combo
-	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
-		void GetButtonSkillAction(FKey Currkeys);
-
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
 		void ServerExecuteAction(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack);
@@ -587,5 +609,9 @@ public:
 
 	/***********************CONTROL FLAG MODE*****************************/
 	void ControlFlagMode(ABattleMobaCTF* cf);
+
+	//Get skills from input touch combo
+	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
+		void GetButtonSkillAction(FKey Currkeys, FString ButtonName, bool& cooldown, float& CooldownVal);
 
 };

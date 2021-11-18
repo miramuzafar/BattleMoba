@@ -22,6 +22,7 @@
 #include "Kismet/KismetStringLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Math/Rotator.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ABattleMobaCharacter
@@ -374,8 +375,8 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	//PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	//PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ABattleMobaCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ABattleMobaCharacter::MoveRight);
@@ -402,13 +403,7 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	/*ABattleMobaPlayerState* newPS = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
-	if (newPS)
-	{
-		newPS->RespawnTimeCounter = 30;
-	}
-*/
+
 	this->GetMesh()->SetSkeletalMesh(CharMesh, false);
 	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
@@ -419,6 +414,20 @@ void ABattleMobaCharacter::BeginPlay()
 	TimerDelegate.BindLambda([this]()
 	{
 		this->GetMesh()->SetVisibility(true);
+
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+
+		/*APlayerController* pc = Cast<APlayerController>(this->GetController());
+		if (pc)
+		{
+			if (pc->IsLocalPlayerController() && pc->GetNetMode() != ENetMode::NM_DedicatedServer)
+			{
+
+				pc->bShowMouseCursor = false;
+				pc->SetInputMode(FInputModeGameOnly());
+			}
+		}*/
+
 	});
 	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
 
@@ -516,8 +525,106 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 	return 0.0f;
 }
 
+
 void ABattleMobaCharacter::OnConstruction(const FTransform & Transform)
 {
+
+}
+
+void ABattleMobaCharacter::CheckSwipeType(EInputType Type, FVector2D Location, TEnumAsByte<ETouchIndex::Type> TouchIndex)
+{
+	if (UGameplayStatics::GetPlatformName() == "IOS" || UGameplayStatics::GetPlatformName() == "Android")
+	{
+		//Check for touch pressed
+		if (Type == EInputType::Pressed)
+		{
+			if (TouchIndex == ETouchIndex::Touch1)
+			{
+				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
+				if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+
+					TouchStart = Location;
+					MoveTouchIndex = TouchIndex;
+					IsPressed = true;
+				}
+				else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
+				{
+					InitRotateToggle = true;
+				}
+			}
+			else if (TouchIndex == ETouchIndex::Touch2)
+			{
+				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
+				if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+
+					TouchStart = Location;
+					MoveTouchIndex = TouchIndex;
+					IsPressed = true;
+				}
+				else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
+				{
+					InitRotateToggle = true;
+				}
+			}
+		}
+		//If the pressed touch is swiping
+		else if (Type == EInputType::Hold)
+		{
+			if (TouchIndex == ETouchIndex::Touch1)
+			{
+				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
+				if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+
+					TouchEnd = Location;
+					MoveTouchIndex = TouchIndex;
+				}
+				else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
+				{
+					RotTouchIndex = TouchIndex;
+				}
+			}
+			if (TouchIndex == ETouchIndex::Touch2)
+			{
+				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
+				if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+
+					TouchEnd = Location;
+					MoveTouchIndex = TouchIndex;
+				}
+				else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
+				{
+					RotTouchIndex = TouchIndex;
+				}
+			}
+		}
+		//if the current touch index is being released
+		else if (Type == EInputType::Released)
+		{
+			if (TouchIndex == ETouchIndex::Touch1)
+			{
+				if (MoveTouchIndex == TouchIndex)
+				{
+					IsPressed = false;
+				}
+			}
+			if (TouchIndex == ETouchIndex::Touch2)
+			{
+				if (MoveTouchIndex == TouchIndex)
+				{
+					IsPressed = false;
+				}
+			}
+
+		}
+	}
 
 }
 
@@ -530,8 +637,20 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 		UInputLibrary::SetUIVisibility(W_DamageOutput, this);
 	}
 
-	
-	
+	////////////////Mobile Input/////////////////////////////
+	if (this->GetNetMode() != ENetMode::NM_DedicatedServer)
+	{
+		//Detect Movement Input
+		if (IsPressed)
+		{
+			AddSwipeVectorToMovementInput();
+		}
+		if (InitRotateToggle)
+		{
+			AddSwipeVectorToRotationInput();
+		}
+	}
+	////////////////////////////////////////////////////////
 	//if (currentTarget != nullptr && Rotate == true)
 	//{
 	//	if (HasAuthority())
@@ -583,6 +702,58 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 	//}
 
 	//FireTrace(this->GetActorLocation(), this->GetActorLocation(), this->GetActorRotation(), true);
+}
+
+void ABattleMobaCharacter::AddSwipeVectorToMovementInput()
+{
+	//Get world direction of swapping
+	FVector2D Total = TouchStart - TouchEnd;
+
+	//Get world position
+	FVector WorldDirection = FVector(-Total.Y, Total.X, this->GetActorLocation().Z);
+	
+	//Get Controller rotator so that teh direction will always align with the rotator
+	const FRotator Rotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+	//rotate a vector from YawRotation
+	const FVector Direction = YawRotation.RotateVector(WorldDirection);
+
+	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Enable move")));
+	
+	//Move character based on world direction
+	AddMovementInput(Direction, -1.0f);
+}
+
+void ABattleMobaCharacter::AddSwipeVectorToRotationInput()
+{
+	bool temp;
+	FVector2D newVect;
+	UGameplayStatics::GetPlayerController(this, 0)->GetInputTouchState(RotTouchIndex, newVect.X, newVect.Y, temp);
+
+	if (temp)
+	{
+		if (!StartRotate)
+		{
+			StartRotate = true;
+			BaseTurnRate = newVect.X; //Set new x velocity
+			BaseLookUpRate = newVect.Y;//Set new y velocity
+		}
+		else
+		{
+			//Rotate camera based on velocity of the swipe
+			AddControllerYawInput((newVect.X - BaseTurnRate) / 5.0f);
+			AddControllerPitchInput((newVect.Y - BaseLookUpRate) / 5.0f);
+
+			BaseTurnRate = newVect.X;//Set new x velocity
+			BaseLookUpRate = newVect.Y;//Set new y velocity
+		}
+	}
+	else
+	{
+		StartRotate = false;
+		InitRotateToggle = false;//if current touchindex is released
+	}
 }
 
 bool ABattleMobaCharacter::ServerRotateToCameraView_Validate(FRotator InRot)
@@ -741,7 +912,7 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					{
 						if (gm)
 						{
-							gm->PlayerKilled(ps, this->DamageDealers.Last(), DamageDealers);
+							gm->PlayerKilled(ps, this->DamageDealers.Last(), DamageDealers); //Set current team scores and kills
 						}
 					});
 
@@ -920,7 +1091,7 @@ void ABattleMobaCharacter::ClearDamageDealers()
 		this->GetWorldTimerManager().ClearTimer(this->DealerTimer);
 }
 
-void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
+void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonName, bool& cooldown, float& CooldownVal)
 {
 	if (ActionEnabled == true)
 	{
@@ -934,7 +1105,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 
 				if (row)
 				{
-					if (row->keys == Currkeys)
+					if (row->keys == Currkeys || row->ButtonName == ButtonName)
 					{
 						//if current skill is using cooldown
 						if (row->IsUsingCD && !row->UseTranslate)
@@ -945,10 +1116,13 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 							if (row->isOnCD == true)
 							{
 								//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+								GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+								cooldown = row->isOnCD;
 								break;
 							}
 							else if (row->isOnCD == false)
 							{
+								cooldown = row->isOnCD;
 								row->isOnCD = true;
 								//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 								if (row->SkillMoveset != nullptr)
@@ -976,6 +1150,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 
 										//start cooldown the skill
 										this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
+										CooldownVal = row->CDDuration;
 										break;
 									}
 								}
@@ -989,10 +1164,13 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 							if (row->isOnCD == true)
 							{
 								//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+								GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+								cooldown = row->isOnCD;
 								break;
 							}
 							else if (row->isOnCD == false)
 							{
+								cooldown = row->isOnCD;
 								row->isOnCD = true;
 								//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 								if (row->SkillMoveset != nullptr)
@@ -1018,6 +1196,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys)
 
 										//start cooldown the skill
 										this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
+										CooldownVal = row->CDDuration;
 										break;
 									}
 								}
@@ -1225,10 +1404,17 @@ void ABattleMobaCharacter::RespawnCharacter_Implementation()
 	ABattleMobaPC* PC = Cast<ABattleMobaPC>(UGameplayStatics::GetPlayerController(this, 0));
 	if (PC)
 	{
+		//Set current input to interact with UI in spectator mode
+		if (PC->IsLocalPlayerController() && PC->GetNetMode() != ENetMode::NM_DedicatedServer)
+		{
+			PC->bShowMouseCursor = true;
+			PC->SetInputMode(FInputModeGameAndUI());
+		}
 		ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(PC->PlayerState);
 		if (PS)
 		{
-			PS->RespawnTimeCounter = PS->RespawnTimeCounter - 1;
+			PS->RespawnTimeCounter -= 1;
+			PS->DisplayRespawnTime();
 			PC->RespawnPawn(PS->SpawnTransform);
 			PC->UnPossess();
 		}
@@ -1353,11 +1539,27 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target)
 		FRotator RotateTo = FRotator(this->GetCapsuleComponent()->GetComponentRotation().Pitch, LookRotation.Yaw, this->GetCapsuleComponent()->GetComponentRotation().Roll);
 		//FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), RotateTo, this->GetWorld()->GetDeltaSeconds(), 100.0f);
 
-		//this->SetActorRotation(RotateTo);
-		UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), this->GetCapsuleComponent()->GetComponentLocation(), RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+		//Check for Character to move the component target, else just rotate
+		ABattleMobaCharacter* characterActor = Cast<ABattleMobaCharacter>(Target);
+
+		//If the distance between two character is outside range
+		if (this->GetDistanceTo(Target) > RotateRadius && characterActor)
+		{
+			//Get Vector from player minus target
+			FVector FromOriginToTarget = this->GetActorLocation() - Target->GetActorLocation();
+
+			//To avoid overlapping actors
+			//Multiply by Radius and divided by distance
+			FromOriginToTarget *= RotateRadius / this->GetDistanceTo(Target);
+
+			//Locate player position based of the radius size
+			UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+		}
+		else
+		{
+			UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), this->GetCapsuleComponent()->GetComponentLocation(), RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+		}
 		closestActor = nullptr;
-
-
 	}
 }
 
@@ -1463,12 +1665,20 @@ void ABattleMobaCharacter::SafeZoneMulticast_Implementation(ABMobaTriggerCapsule
 
 void ABattleMobaCharacter::ControlFlagMode(ABattleMobaCTF* cf)
 {
+	if (cf->isCompleted == false)
+	{
+		ABattleMobaGameState* thisGS = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+		if (thisGS)
+		{
+			thisGS->SetTowerWidgetColors(cf);
+		}
+	}
+
 	if (this->IsLocallyControlled())
 	{
 		//Run server Control Flag
 		ControlFlagServer(cf);
 	}
-	
 }
 
 bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF * cf)
@@ -1476,7 +1686,7 @@ bool ABattleMobaCharacter::ControlFlagServer_Validate(ABattleMobaCTF * cf)
 	return true;
 }
 
-void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF * cf)
+void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF* cf)
 {
 	if (cf->RadiantControl > 0 && cf->DireControl == 0)
 	{
@@ -1500,7 +1710,6 @@ void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF * cf)
 	cf->RadiantControl = 0;
 	cf->DireControl = 0;
 	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current CTF Team is %s"), ((*CTFteam.ToString()))));
-	
 }
 
 bool ABattleMobaCharacter::ControlFlagMulticast_Validate(ABattleMobaCTF* cf, FName Team)
@@ -1567,15 +1776,6 @@ void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF* c
 		}
 
 		cf->OnRep_Val();
-	}
-
-	if (cf->isCompleted == false)
-	{
-		ABattleMobaGameState* thisGS = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
-		if (thisGS)
-		{
-			thisGS->SetTowerWidgetColors(cf);
-		}
 	}
 }
 
@@ -2044,12 +2244,12 @@ void ABattleMobaCharacter::OnResetVR()
 
 void ABattleMobaCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
-	Jump();
+	//Jump();
 }
 
 void ABattleMobaCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
-	StopJumping();
+	//StopJumping();
 }
 
 void ABattleMobaCharacter::OnCameraShake()

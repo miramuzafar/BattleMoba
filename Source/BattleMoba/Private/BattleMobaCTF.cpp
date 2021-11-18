@@ -14,6 +14,7 @@
 
 #include "BattleMobaCharacter.h"
 #include "BattleMobaPlayerState.h"
+#include "BattleMobaGameState.h"
 
 void ABattleMobaCTF::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
