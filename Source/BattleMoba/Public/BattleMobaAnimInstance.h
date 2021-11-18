@@ -22,7 +22,7 @@ public:
 public:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
-	bool bMoving = true;
+	bool bMoving = false;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 		bool CanMove = true;
@@ -33,13 +33,11 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 		bool canAttack = false;
 
-protected:
-
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 		float Speed = 0.0f;
 
-	
+protected:
 
-	
+	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 };
 

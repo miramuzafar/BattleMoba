@@ -32,7 +32,8 @@ UENUM(BlueprintType)
 enum class EResult : uint8
 {
 	Cooldown,
-	Translate
+	Translate,
+	Section
 };
 
 USTRUCT(BlueprintType)

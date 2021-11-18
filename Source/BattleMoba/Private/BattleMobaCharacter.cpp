@@ -23,6 +23,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/SkinnedMeshComponent.h"
 #include "Math/Rotator.h"
+#include "Animation/BlendSpace1D.h"
+#include "Animation/AnimSingleNodeInstance.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ABattleMobaCharacter
@@ -1111,10 +1113,10 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 									TargetHead = row->TargetIsHead;
 									if (this->IsLocallyControlled())
 									{
-										DetectNearestTarget();
+										DetectNearestTarget(EResult::Cooldown, *row);
 										AttackSection = "NormalAttack01";
 										//play the animation that visible to all clients
-										ServerExecuteAction(*row, CurrentSection, AttackSection, true);
+										//ServerExecuteAction(*row, CurrentSection, AttackSection, true);
 
 										//setting up for cooldown properties
 										FTimerHandle handle;
@@ -1159,6 +1161,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 									if (this->IsLocallyControlled())
 									{
 										AttackSection = "NormalAttack01";
+
 										//play the animation that visible to all clients
 										ServerExecuteAction(*row, CurrentSection, AttackSection, false);
 
@@ -1194,9 +1197,9 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 								TargetHead = row->TargetIsHead;
 								if (this->IsLocallyControlled())
 								{
-									DetectNearestTarget();
+									DetectNearestTarget(EResult::Section, *row);
 								}
-								AttackCombo(*row);
+								/*AttackCombo(*row);*/
 								break;
 
 							}
@@ -1413,12 +1416,12 @@ void ABattleMobaCharacter::EnableMovementMode()
 	}
 }
 
-bool ABattleMobaCharacter::DetectNearestTarget_Validate()
+bool ABattleMobaCharacter::DetectNearestTarget_Validate(EResult Type, FActionSkill SelectedRow)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::DetectNearestTarget_Implementation()
+void ABattleMobaCharacter::DetectNearestTarget_Implementation(EResult Type, FActionSkill SelectedRow)
 {
 	//		create tarray for hit results
 	TArray<FHitResult> hitResults;
@@ -1499,17 +1502,16 @@ void ABattleMobaCharacter::DetectNearestTarget_Implementation()
 			}
 			//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Result: %s"), *Hit.Actor->GetName()));
 		}
-		
-		RotateNearestTarget(closestActor);
+		RotateNearestTarget(closestActor, Type, SelectedRow);
 	}
 }
 
-bool ABattleMobaCharacter::RotateNearestTarget_Validate(AActor* Target)
+bool ABattleMobaCharacter::RotateNearestTarget_Validate(AActor* Target, EResult Type, FActionSkill SelectedRow)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target)
+void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, EResult Type, FActionSkill SelectedRow)
 {
 	if (IsValid(Target))
 	{
@@ -1533,14 +1535,78 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target)
 			//Multiply by Radius and divided by distance
 			FromOriginToTarget *= RotateRadius / this->GetDistanceTo(Target);
 
-			//Locate player position based of the radius size
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), FromOriginToTarget.Size()));
+
+			UBattleMobaAnimInstance* inst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
+			inst->Speed = FromOriginToTarget.Size();
+			inst->bMoving = true;
+
+			//rotate and move the component towards target
 			UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+
+			//setting up delay properties
+			FTimerHandle handle;
+			FTimerDelegate TimerDelegate;
+
+			TimerDelegate.BindLambda([this, inst, Type, SelectedRow]()
+			{
+				inst->Speed = 0.0f;
+				inst->bMoving = false;
+
+				//execute action skill
+				if (this->IsLocallyControlled())
+				{
+					if (Type == EResult::Cooldown)
+					{
+						ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, true);
+					}
+					else if (Type == EResult::Section)
+					{
+						AttackCombo(SelectedRow);
+					}
+				}
+			});
+			/*Start delay to reset speed*/
+			this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.1f, false);
+
 		}
 		else
 		{
+			//rotate the component towards target
 			UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), this->GetCapsuleComponent()->GetComponentLocation(), RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+
+			//execute action skill
+			if (this->IsLocallyControlled())
+			{
+				if (Type == EResult::Cooldown)
+				{
+					ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, true);
+				}
+				else if (Type == EResult::Section)
+				{
+					AttackCombo(SelectedRow);
+				}
+			}
 		}
 		closestActor = nullptr;
+	}
+	else
+	{
+		//Execute when closestactor is invalid
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("INVALID")));
+
+		//execute action skill
+		if (this->IsLocallyControlled())
+		{
+			if (Type == EResult::Cooldown)
+			{
+				ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, true);
+			}
+			else if (Type == EResult::Section)
+			{
+				AttackCombo(SelectedRow);
+			}
+		}
 	}
 }
 

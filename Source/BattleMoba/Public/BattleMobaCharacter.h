@@ -7,6 +7,7 @@
 #include "InputLibrary.h"
 #include "GameFramework/Character.h"
 #include "BattleMobaAnimInstance.h"
+#include "Animation/BlendSpace1D.h"
 #include "BattleMobaCharacter.generated.h"
 
 class ABMobaTriggerCapsule;
@@ -216,6 +217,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
 	bool InitRotateToggle = false;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Anims")
+		UBlendSpace1D* BlendSpace;
 
 	FVector2D TouchStart;
 
@@ -520,11 +524,11 @@ protected:
 	UFUNCTION(NetMulticast, Unreliable, WithValidation)
 		void ControlFlagMulticast(ABattleMobaCTF* cf, FName Team);
 
-	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "ActionSkill")
-		void DetectNearestTarget();
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, meta = (ExpandEnumAsExecs = Type), Category = "ActionSkill")
+		void DetectNearestTarget(EResult Type, FActionSkill SelectedRow);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "ActionSkill")
-		void RotateNearestTarget(AActor* Target);
+		void RotateNearestTarget(AActor* Target, EResult Type, FActionSkill SelectedRow);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Effects")
 		void CombatCamShake();
