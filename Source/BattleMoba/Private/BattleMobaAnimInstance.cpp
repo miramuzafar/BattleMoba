@@ -10,4 +10,7 @@ void UBattleMobaAnimInstance::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(UBattleMobaAnimInstance, bMoving);
 	DOREPLIFETIME(UBattleMobaAnimInstance, CanMove);
 }
-
+void UBattleMobaAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
+{
+	Super::NativeUpdateAnimation(DeltaSeconds);
+}
