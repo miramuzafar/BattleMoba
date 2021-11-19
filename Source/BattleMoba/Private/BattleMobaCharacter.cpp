@@ -1528,11 +1528,11 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 			//Multiply by Radius and divided by distance
 			FromOriginToTarget *= RotateRadius / this->GetDistanceTo(Target);
 
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), FromOriginToTarget.Size()));
-
 			UBattleMobaAnimInstance* inst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
-			inst->Speed = FromOriginToTarget.Size();
 			inst->bMoving = true;
+			inst->Speed = FromOriginToTarget.Size();
+
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
 
 			//rotate and move the component towards target
 			UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
@@ -1543,8 +1543,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 
 			TimerDelegate.BindLambda([this, inst, Type, SelectedRow]()
 			{
-				inst->Speed = 0.0f;
-				inst->bMoving = false;
+				//inst->Speed = 0.0f;
 
 				//execute action skill
 				if (this->IsLocallyControlled())
@@ -1558,6 +1557,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 						AttackCombo(SelectedRow);
 					}
 				}
+				inst->bMoving = false;
 			});
 			/*Start delay to reset speed*/
 			this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.1f, false);
