@@ -22,19 +22,22 @@ public:
 public:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
-	bool bMoving = true;
+	bool bMoving = false;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 		bool CanMove = true;
 
-protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		int Switcher = 0;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+		bool canAttack = false;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 		float Speed = 0.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int Switcher = 0;
+protected:
 
-	
+	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 };
 
