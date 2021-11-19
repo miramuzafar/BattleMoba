@@ -431,13 +431,6 @@ void ABattleMobaCharacter::BeginPlay()
 	}
 
 	CreateCPHUD();
-
-	AttackTraceParams.AddIgnoredActor(this);
-
-	const FName traceTag("MyTraceTag");
-	GetWorld()->DebugDrawTraceTag = traceTag;
-
-	AttackTraceParams.TraceTag = traceTag;
 }
 
 float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -469,10 +462,10 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 				//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Rotation Delta: %s"), (*RotDifference.ToString())));
 
 				/**		Get random index from array of section names*/
-				FName arr[2] = { "NormalHit01", "NormalHit02" };
-				int RandInt = rand() % 2;
-				//FName HitSection = arr[RandInt];
-				FName HitSection = "NormalHit01";
+				FName arr[3] = { "NormalHit01", "NormalHit02", "NormalHit03" };
+				int RandInt = rand() % 3;
+				FName HitSection = arr[RandInt];
+				//FName HitSection = "NormalHit01";
 
 				// right
 				if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, -135.0f, -45.0f, true, true))
@@ -1593,7 +1586,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 	else
 	{
 		//Execute when closestactor is invalid
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("INVALID")));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("INVALID")));
 
 		//execute action skill
 		if (this->IsLocallyControlled())
@@ -1994,6 +1987,9 @@ void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activ
 		TArray< TEnumAsByte<EObjectTypeQuery> > ObjectTypes;
 		ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
 
+		TArray<class AActor*> IgnoreActors;
+		IgnoreActors.Add(this);
+
 		ActiveColliders.Empty();
 
 		if (activeAttack == 1)
@@ -2043,12 +2039,14 @@ void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activ
 
 			//bool bHit = GetWorld()->LineTraceSingleByObjectType(hitResult, startTrace, endTrace, FCollisionObjectQueryParams(ECC_TO_BITFIELD(ECC_Attack)), FCollisionQueryParams(TEXT("IKTrace"), false, this));
 			bool bHit = UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(), startTrace, endTrace, ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResult, true, FColor::Red, FColor::Green, -1.0f);
-
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("Blocking hit is %s"), bHit ? TEXT("True") : TEXT("False")));
-			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(hitResults.Actor)));
+			
+			
 			if (bHit)
 			{
+				
 				HitResult(hitResult);
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *hitResult.Actor->GetName()));
+
 			}
 		}
 	}
@@ -2066,21 +2064,14 @@ bool ABattleMobaCharacter::HitResult_Validate(FHitResult hit)
 
 void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit)
 {
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABattleMobaCharacter::StaticClass(), HitActorsFound);
+	ABattleMobaCharacter* DamagedEnemy = Cast<ABattleMobaCharacter>(hit.Actor);
+	ADestructibleTower* DamagedTower = Cast<ADestructibleTower>(hit.Actor);
 
-	ABattleMobaCharacter* DamagedEnemy;
-
-
-	int ArrayLength = HitActorsFound.Num();
-
-	for (uint8 i = 0; i < ArrayLength; ++i)
+	if (IsValid(DamagedEnemy))
 	{
-		DamagedEnemy = Cast<ABattleMobaCharacter>(HitActorsFound[i]);
-
-		TowerActor = Cast<ADestructibleTower>(HitActorsFound[i]);
-
 		if (DamagedEnemy->TeamName != this->TeamName && (DamagedEnemy == hit.Actor) && !(ArrDamagedEnemy.Contains(DamagedEnemy)) && DamagedEnemy->InRagdoll == false)
 		{
+			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(DamagedEnemy)));
 			if (DamagedEnemy->AnimInsta->Montage_IsPlaying(DamagedEnemy->CounterMoveset))
 			{
 				if (DamagedEnemy->IsLocallyControlled())
@@ -2101,13 +2092,17 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit)
 				ArrDamagedEnemy.Add(DamagedEnemy);
 				DoDamage(DamagedEnemy);
 			}
-			
 		}
+	}
 
-		else if (TowerActor->TeamName != this->TeamName && TowerActor == hit.Actor && !(ArrDamagedEnemy.Contains(TowerActor)) && TowerActor->isDestroyed == false)
+	else if (IsValid(DamagedTower))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("DamagedTower = %s"), IsValid(DamagedTower) ? TEXT("True") : TEXT("False")));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(DamagedTower)));
+		if (DamagedTower->TeamName != this->TeamName && DamagedTower == hit.Actor && !(ArrDamagedEnemy.Contains(DamagedTower)) && DamagedTower->isDestroyed == false)
 		{
-			ArrDamagedEnemy.Add(TowerActor);
-			TowerReceiveDamage(TowerActor, this->BaseDamage);
+			ArrDamagedEnemy.Add(DamagedTower);
+			TowerReceiveDamage(DamagedTower, this->BaseDamage);
 		}
 	}
 }
