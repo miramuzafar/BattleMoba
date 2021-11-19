@@ -313,9 +313,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Rotate")
 		TArray<AActor*> FoundActors;
 
-	UPROPERTY()
-		TArray<AActor*> HitActorsFound;
-
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FVector AttackerLocation;
 
@@ -361,10 +358,8 @@ protected:
 		FTimerHandle RespawnTimer;
 
 	UPROPERTY(VisibleAnywhere, Category = "Anim")
-		UBattleMobaAnimInstance* AnimInsta;
+		class UBattleMobaAnimInstance* AnimInsta;
 
-	UPROPERTY(VisibleAnywhere, Category = "Destructible")
-		ADestructibleTower* TowerActor;
 
 	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category = "HitReaction")
 		UParticleSystem* HitEffect;
@@ -384,9 +379,6 @@ protected:
 	UPROPERTY(Replicated, VisibleAnywhere, Category = "Rotate")
 		class ABattleMobaCharacter* RotateToActor;
 
-	UPROPERTY(VisibleAnywhere, Category = "Rotate")
-		TArray<class AActor*> IgnoreActors;
-
 	UPROPERTY()
 		TArray<class ABattleMobaCTF*> Towers;
 
@@ -395,7 +387,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
 		TArray<class AActor*> ArrDamagedEnemy;
-
 
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
 		bool bApplyHitTrace = true;
