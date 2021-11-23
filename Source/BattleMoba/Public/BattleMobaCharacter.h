@@ -224,9 +224,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
 	bool InitRotateToggle = false;
 
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Anims")
-		UBlendSpace1D* BlendSpace;
-
 	FVector2D TouchStart;
 
 	FVector2D TouchEnd;
@@ -264,6 +261,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
 		UAnimMontage* CounterMoveset;
 
+	//Assign data table from bp 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class UDataTable* ActionTable;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* HitReactionMoveset;
 
@@ -284,10 +285,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD", Meta = (ExposeOnSpawn = "true"))
 		UUserWidget* MainWidget;
-
-	//Assign data table from bp 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		class UDataTable* ActionTable;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		bool IsHit;
@@ -418,6 +415,12 @@ protected:
 	void AddSwipeVectorToRotationInput();
 
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Setup")
+	void FinishSetupBeginPlay();
+
+	UFUNCTION(BlueprintCallable, Category = "Setup")
+	void RefreshPlayerData();
 
 	UFUNCTION(BlueprintCallable, meta = (ExpandEnumAsExecs = Type))
 	void CheckSwipeType(EInputType Type, FVector2D Location, TEnumAsByte<ETouchIndex::Type> TouchIndex);	
