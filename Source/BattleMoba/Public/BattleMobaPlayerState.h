@@ -48,6 +48,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Respawn")
 	FTimerHandle RespawnHandle;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class UDataTable* ActionTable;
+
 public:
 	UFUNCTION(Reliable, Client, WithValidation, Category = "PI")
 		void SetPlayerIndex(int32 PlayerIndex);

@@ -387,50 +387,7 @@ void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	this->GetMesh()->SetSkeletalMesh(CharMesh, false);
-	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
-
-	FTimerHandle handle;
-	FTimerDelegate TimerDelegate;
-
-	//set the row boolean to false after finish cooldown timer
-	TimerDelegate.BindLambda([this]()
-	{
-		this->GetMesh()->SetVisibility(true);
-
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
-
-		/*APlayerController* pc = Cast<APlayerController>(this->GetController());
-		if (pc)
-		{
-			if (pc->IsLocalPlayerController() && pc->GetNetMode() != ENetMode::NM_DedicatedServer)
-			{
-
-				pc->bShowMouseCursor = false;
-				pc->SetInputMode(FInputModeGameOnly());
-			}
-		}*/
-
-	});
-	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
-
-	FString Context;
-	for (auto& name : ActionTable->GetRowNames())
-	{
-		FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
-
-		if (row)
-		{
-			row->isOnCD = false;
-		}
-	}
-
-	for (TActorIterator<ABattleMobaCTF> It(GetWorld()); It; ++It)
-	{
-		Towers.Add(*It);
-	}
-
-	CreateCPHUD();
+	RefreshPlayerData();
 }
 
 float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -505,6 +462,62 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 void ABattleMobaCharacter::OnConstruction(const FTransform & Transform)
 {
 
+}
+
+void ABattleMobaCharacter::RefreshPlayerData()
+{
+	ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(GetPlayerState());
+	if (PS)
+	{
+		ActionTable = PS->ActionTable;
+
+		FString Context;
+		for (auto& name : ActionTable->GetRowNames())
+		{
+			FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
+
+			if (row)
+			{
+				row->isOnCD = false;
+			}
+		}
+	}
+
+	this->GetMesh()->SetSkeletalMesh(CharMesh, false);
+	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
+
+	FTimerHandle handle;
+	FTimerDelegate TimerDelegate;
+
+	//set the row boolean to false after finish cooldown timer
+	TimerDelegate.BindLambda([this]()
+	{
+		this->GetMesh()->SetVisibility(true);
+
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Rotate: %s"), Rotate ? TEXT("true") : TEXT("false")));
+
+		/*APlayerController* pc = Cast<APlayerController>(this->GetController());
+		if (pc)
+		{
+			if (pc->IsLocalPlayerController() && pc->GetNetMode() != ENetMode::NM_DedicatedServer)
+			{
+
+				pc->bShowMouseCursor = false;
+				pc->SetInputMode(FInputModeGameOnly());
+			}
+		}*/
+
+	});
+	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 1.0f, false);
+
+	for (TActorIterator<ABattleMobaCTF> It(GetWorld()); It; ++It)
+	{
+		Towers.Add(*It);
+	}
+
+	CreateCPHUD();
+
+	FinishSetupBeginPlay();
 }
 
 void ABattleMobaCharacter::CheckSwipeType(EInputType Type, FVector2D Location, TEnumAsByte<ETouchIndex::Type> TouchIndex)

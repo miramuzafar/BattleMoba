@@ -176,6 +176,7 @@ void ABattleMobaGameMode::SpawnBasedOnTeam/*_Implementation*/(FName TeamName, US
 				pawn->TeamName = PS->TeamName;
 
 				pawn->CharMesh = PS->CharMesh;
+				//pawn->ActionTable = PS->ActionTable;
 				PS->SpawnTransform = PStart->GetActorTransform();
 				UGameplayStatics::FinishSpawningActor(pawn, FTransform(PStart->GetActorRotation(), PStart->GetActorLocation()));
 
