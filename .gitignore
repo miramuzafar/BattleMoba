@@ -80,3 +80,4 @@ BattleMoba.uproject
 Source/BattleMobaServer.Target.cs
 Config/DefaultEngine.ini
 *.uproject
+*.uproject

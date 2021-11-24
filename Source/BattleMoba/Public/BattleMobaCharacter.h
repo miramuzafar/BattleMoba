@@ -7,7 +7,6 @@
 #include "InputLibrary.h"
 #include "GameFramework/Character.h"
 #include "BattleMobaAnimInstance.h"
-#include "Animation/BlendSpace1D.h"
 #include "BattleMobaCharacter.generated.h"
 
 class ABMobaTriggerCapsule;
@@ -19,7 +18,7 @@ class ABattleMobaCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-		//Replicated Network setup
+	//Replicated Network setup
 		void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/** Camera boom positioning the camera behind the character */
