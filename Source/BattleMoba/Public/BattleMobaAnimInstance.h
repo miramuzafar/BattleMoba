@@ -17,12 +17,14 @@ class BATTLEMOBA_API UBattleMobaAnimInstance : public UAnimInstance
 	
 public:
 
+	UBattleMobaAnimInstance();
+
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
-	bool bMoving = false;
+		bool bMoving = false;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 		bool CanMove = true;
@@ -36,8 +38,24 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 		float Speed = 0.0f;
 
+	
+
 protected:
 
+	UPROPERTY(Replicated, BlueprintReadWrite)
+		bool isBox = false;
+
+	UPROPERTY(Replicated, BlueprintReadWrite)
+		bool isShao = false;
+
+	APawn* Owner;
+
+protected:
+
+	virtual void NativeInitializeAnimation() override;
+
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+
+	
 };
 

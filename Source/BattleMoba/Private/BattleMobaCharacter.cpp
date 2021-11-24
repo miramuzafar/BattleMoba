@@ -23,7 +23,6 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/SkinnedMeshComponent.h"
 #include "Math/Rotator.h"
-#include "Animation/BlendSpace1D.h"
 #include "Animation/AnimSingleNodeInstance.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -52,7 +51,6 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, BoneName);
 	DOREPLIFETIME(ABattleMobaCharacter, HitLocation);
 	DOREPLIFETIME(ABattleMobaCharacter, AttackSection);
-	DOREPLIFETIME(ABattleMobaCharacter, CurrentSection);
 	DOREPLIFETIME(ABattleMobaCharacter, TargetHead);
 	DOREPLIFETIME(ABattleMobaCharacter, DamageDealers);
 	DOREPLIFETIME(ABattleMobaCharacter, Rotate);
@@ -71,6 +69,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, ActiveColliders);
 	DOREPLIFETIME(ABattleMobaCharacter, ArrDamagedEnemy);
 	DOREPLIFETIME(ABattleMobaCharacter, bApplyHitTrace);
+	DOREPLIFETIME(ABattleMobaCharacter, comboCount);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -320,6 +319,26 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 
 	TraceDistance = 20.0f;
 
+	static ConstructorHelpers::FObjectFinder<UDataTable> FindSltDT(TEXT("DataTable'/Game/Storage/DT_Slt.DT_Slt'"));
+
+	if (FindSltDT.Object)
+	{
+		this->SltActionTable = FindSltDT.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> FindBoxDT(TEXT("DataTable'/Game/Storage/DT_Box.DT_Box'"));
+
+	if (FindBoxDT.Object)
+	{
+		this->BoxActionTable = FindBoxDT.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> FindShaDT(TEXT("DataTable'/Game/Storage/DT_Shao.DT_Shao'"));
+
+	if (FindShaDT.Object)
+	{
+		this->ShaActionTable = FindShaDT.Object;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -428,28 +447,28 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 				if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, -135.0f, -45.0f, true, true))
 				{
 					HitReactionClient(this, Damage, this->RightHitMoveset, HitSection);
-					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from RIGHT")));
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from RIGHT")));
 				}
 
 				// front
 				else if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, -45.0f, 45.0f, true, true))
 				{
 					HitReactionClient(this, Damage, this->FrontHitMoveset, HitSection);
-					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from FRONT")));
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from FRONT")));
 				}
 
 				//	left
 				else if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, 45.0f, 135.0f, true, true))
 				{
 					HitReactionClient(this, Damage, this->LeftHitMoveset, HitSection);
-					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from LEFT")));
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from LEFT")));
 				}
 
 				//	back
 				else
 				{
 					HitReactionClient(this, Damage, this->BackHitMoveset, HitSection);
-					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from BACK")));
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from BACK")));
 				}
 
 			}
@@ -461,7 +480,6 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 
 void ABattleMobaCharacter::OnConstruction(const FTransform & Transform)
 {
-
 }
 
 void ABattleMobaCharacter::RefreshPlayerData()
@@ -690,7 +708,6 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 	//	}
 	//}
 
-	//FireTrace(this->GetActorLocation(), this->GetActorLocation(), this->GetActorRotation(), true);
 }
 
 void ABattleMobaCharacter::AddSwipeVectorToMovementInput()
@@ -980,6 +997,19 @@ void ABattleMobaCharacter::StunPlayerClient_Implementation(bool checkStun)
 {
 	/**		called in stun hit reaction montage AnimBP*/
 	this->IsStunned = checkStun;
+
+	if (this->IsStunned == true)
+	{
+		FTimerDelegate TimerDel;
+		FTimerHandle handle;
+
+		TimerDel.BindLambda([this]()
+		{
+			this->IsStunned = false;
+		});
+
+		this->GetWorldTimerManager().SetTimer(handle, TimerDel, 3.0f, false);
+	}
 }
 
 
@@ -1086,128 +1116,131 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 	{
 		if (GetMesh()->SkeletalMesh != nullptr)
 		{
-			//Used in error reporting
-			FString Context;
-			for (auto& name : ActionTable->GetRowNames())
+			if (ActionTable != nullptr)
 			{
-				FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
-
-				if (row)
+				//Used in error reporting
+				FString Context;
+				for (auto& name : ActionTable->GetRowNames())
 				{
-					if (row->keys == Currkeys || row->ButtonName == ButtonName)
-					{
-						//if current skill is using cooldown
-						if (row->IsUsingCD && !row->UseTranslate)
-						{
-							//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+					FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
 
-							//if the skill is on cooldown, stop playing the animation, else play the skill animation
-							if (row->isOnCD == true)
+					if (row)
+					{
+						if (row->keys == Currkeys || row->ButtonName == ButtonName)
+						{
+							//if current skill is using cooldown
+							if (row->IsUsingCD && !row->UseTranslate)
 							{
-								//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
-								GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
-								cooldown = row->isOnCD;
-								break;
+								//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+
+								//if the skill is on cooldown, stop playing the animation, else play the skill animation
+								if (row->isOnCD == true)
+								{
+									//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+									GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+									cooldown = row->isOnCD;
+									break;
+								}
+								else if (row->isOnCD == false)
+								{
+									cooldown = row->isOnCD;
+									row->isOnCD = true;
+									//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
+									if (row->SkillMoveset != nullptr)
+									{
+										TargetHead = row->TargetIsHead;
+										if (this->IsLocallyControlled())
+										{
+											DetectNearestTarget(EResult::Cooldown, *row);
+											AttackSection = "NormalAttack01";
+											//play the animation that visible to all clients
+											//ServerExecuteAction(*row, CurrentSection, AttackSection, true);
+
+											//setting up for cooldown properties
+											FTimerHandle handle;
+											FTimerDelegate TimerDelegate;
+
+											//set the row boolean to false after finish cooldown timer
+											TimerDelegate.BindLambda([row, this]()
+											{
+												UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
+												row->isOnCD = false;
+
+												//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+											});
+
+											//start cooldown the skill
+											this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
+											CooldownVal = row->CDDuration;
+											break;
+										}
+									}
+									break;
+								}
 							}
-							else if (row->isOnCD == false)
+
+							/**		current skill uses translation*/
+							else if (row->IsUsingCD && row->UseTranslate)
 							{
-								cooldown = row->isOnCD;
-								row->isOnCD = true;
+								if (row->isOnCD == true)
+								{
+									//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+									GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+									cooldown = row->isOnCD;
+									break;
+								}
+								else if (row->isOnCD == false)
+								{
+									cooldown = row->isOnCD;
+									row->isOnCD = true;
+									//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
+									if (row->SkillMoveset != nullptr)
+									{
+										if (this->IsLocallyControlled())
+										{
+											AttackSection = "NormalAttack01";
+
+											//play the animation that visible to all clients
+											ServerExecuteAction(*row, AttackSection, false);
+
+											//setting up for cooldown properties
+											FTimerHandle handle;
+											FTimerDelegate TimerDelegate;
+
+											//set the row boolean to false after finish cooldown timer
+											TimerDelegate.BindLambda([row, this]()
+											{
+												UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
+												row->isOnCD = false;
+
+												//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+											});
+
+											//start cooldown the skill
+											this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
+											CooldownVal = row->CDDuration;
+											break;
+										}
+									}
+									break;
+								}
+							}
+
+							/**   current skill has combo */
+							else if (row->UseSection)
+							{
 								//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 								if (row->SkillMoveset != nullptr)
 								{
 									TargetHead = row->TargetIsHead;
 									if (this->IsLocallyControlled())
 									{
-										DetectNearestTarget(EResult::Cooldown, *row);
-										AttackSection = "NormalAttack01";
-										//play the animation that visible to all clients
-										//ServerExecuteAction(*row, CurrentSection, AttackSection, true);
-
-										//setting up for cooldown properties
-										FTimerHandle handle;
-										FTimerDelegate TimerDelegate;
-
-										//set the row boolean to false after finish cooldown timer
-										TimerDelegate.BindLambda([row, this]()
-										{
-											UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
-											row->isOnCD = false;
-
-											//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
-										});
-
-										//start cooldown the skill
-										this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
-										CooldownVal = row->CDDuration;
-										break;
+										DetectNearestTarget(EResult::Section, *row);
 									}
+									/*AttackCombo(*row);*/
+									break;
+
 								}
-								break;
-							}
-						}
-
-						/**		current skill uses translation*/
-						else if (row->IsUsingCD && row->UseTranslate)
-						{
-							if (row->isOnCD == true)
-							{
-								//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
-								GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
-								cooldown = row->isOnCD;
-								break;
-							}
-							else if (row->isOnCD == false)
-							{
-								cooldown = row->isOnCD;
-								row->isOnCD = true;
-								//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
-								if (row->SkillMoveset != nullptr)
-								{
-									if (this->IsLocallyControlled())
-									{
-										AttackSection = "NormalAttack01";
-
-										//play the animation that visible to all clients
-										ServerExecuteAction(*row, CurrentSection, AttackSection, false);
-
-										//setting up for cooldown properties
-										FTimerHandle handle;
-										FTimerDelegate TimerDelegate;
-
-										//set the row boolean to false after finish cooldown timer
-										TimerDelegate.BindLambda([row, this]()
-										{
-											UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
-											row->isOnCD = false;
-
-											//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
-										});
-
-										//start cooldown the skill
-										this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
-										CooldownVal = row->CDDuration;
-										break;
-									}
-								}
-								break;
-							}
-						}
-
-						/**   current skill has combo */
-						else if (row->UseSection)
-						{
-							//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
-							if (row->SkillMoveset != nullptr)
-							{
-								TargetHead = row->TargetIsHead;
-								if (this->IsLocallyControlled())
-								{
-									DetectNearestTarget(EResult::Section, *row);
-								}
-								/*AttackCombo(*row);*/
-								break;
-
 							}
 						}
 					}
@@ -1218,122 +1251,24 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 }
 
 void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
-{
-	/**		checks if the mesh has a skeletal mesh*/
-	if (GetMesh()->SkeletalMesh != nullptr)
+{	
+	if (this->OnComboDelay == false)
 	{
-		if (AnimInsta != nullptr)
+		this->comboCount = this->comboCount + 1;
+
+		//		Check selected row has many sections in it to determine max combo count
+		if (this->comboCount > SelectedRow.Section)
 		{
-			/**		Continues combo section of the montage if there is montage playing */
-		//if (AnimInsta->Montage_IsPlaying(FastComboMoveset)||(AnimInsta->Montage_IsPlaying(StrongkComboMoveset)))
-			if (AnimInsta->IsAnyMontagePlaying())
-			{
-				/**		Checks whether the current montage section contains "Combo" substring */
-				CurrentSection = AnimInsta->Montage_GetCurrentSection(AnimInsta->GetCurrentActiveMontage());
-
-				/**		Cue "ServerExecuteAction" after current section is finished playing */
-
-				if (SelectedRow.Section == 3)
-				{
-					if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("Combo"), false, false))
-					{
-						/**		Checks if current combo section contains "01" substring*/
-						if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("01"), false, false))
-						{
-							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("02"));
-							AttackSection = FName(*NextSection);
-
-							if (this->IsLocallyControlled())
-							{
-								/**		Change next attack to combo montage section*/
-								ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, false);
-							}
-						}
-
-						else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("02"), false, false))
-						{
-							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("03"));
-							AttackSection = FName(*NextSection);
-
-							if (this->IsLocallyControlled())
-							{
-								/**		Change next attack to combo montage section*/
-								ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, false);
-							}
-						}
-
-						//else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("03"), false, false))
-						//{
-						//	FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("01"));
-						//	AttackSection = FName(*NextSection);
-						//	
-						//	if (this->IsLocallyControlled())
-						//	{
-						//		/**		Change next attack to combo montage section*/
-						//		ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, false);
-						//	}
-						//}
-					}
-				}
-
-				else if (SelectedRow.Section == 2)
-				{
-					if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("Combo"), false, false))
-					{
-						/**		Checks if current combo section contains "01" substring*/
-						if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("01"), false, false))
-						{
-							FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("02"));
-							AttackSection = FName(*NextSection);
-
-							if (this->IsLocallyControlled())
-							{
-								/**		Change next attack to combo montage section*/
-								ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, false);
-							}
-						}
-
-						//else if (UKismetStringLibrary::Contains(CurrentSection.ToString(), TEXT("02"), false, false))
-						//{
-						//	FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack"), TEXT("01"));
-						//	AttackSection = FName(*NextSection);
-
-						//	if (this->IsLocallyControlled())
-						//	{
-						//		/**		Change next attack to combo montage section*/
-						//		ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, false);
-						//	}
-						//	
-						//}
-
-					}
-				}
-			}
-			/**		Plays the first section of the montage*/
-			else
-			{
-				bAttacking = true;
-				FTimerHandle Timer;
-				FTimerDelegate TimerDelegate;
-				AttackSection = "NormalAttack01";
-				CurrentSection = "NormalAttack01";
-
-				if (IsLocallyControlled())
-				{
-					ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, false);
-				}
-
-				TimerDelegate.BindLambda([this]()
-				{
-					bAttacking = false;
-					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT(" bCombo Attack resets to false")));
-				});
-
-				/**		Reset boolean after section ends*/
-				this->GetWorldTimerManager().SetTimer(Timer, TimerDelegate, AttackSectionLength, false);
-			}
+			this->comboCount = 1;
 		}
-		
+
+		FString NextSection = UKismetStringLibrary::Concat_StrStr(TEXT("NormalAttack0"), FString::FromInt(comboCount));
+		AttackSection = FName(*NextSection);
+
+		if (this->IsLocallyControlled())
+		{
+			ServerExecuteAction(SelectedRow, AttackSection, false);
+		}
 	}
 }
 
@@ -1563,7 +1498,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 				{
 					if (Type == EResult::Cooldown)
 					{
-						ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, true);
+						ServerExecuteAction(SelectedRow, AttackSection, true);
 					}
 					else if (Type == EResult::Section)
 					{
@@ -1586,7 +1521,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 			{
 				if (Type == EResult::Cooldown)
 				{
-					ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, true);
+					ServerExecuteAction(SelectedRow, AttackSection, true);
 				}
 				else if (Type == EResult::Section)
 				{
@@ -1606,7 +1541,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 		{
 			if (Type == EResult::Cooldown)
 			{
-				ServerExecuteAction(SelectedRow, CurrentSection, AttackSection, true);
+				ServerExecuteAction(SelectedRow, AttackSection, true);
 			}
 			else if (Type == EResult::Section)
 			{
@@ -1859,12 +1794,12 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 	}
 }
 
-bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack)
+bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack)
+void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
 {
 	/**		Checks SkeletalMesh exists / AnimInst Exists / Player is Stunned or still executing a skill */
 	if (this->GetMesh()->SkeletalMesh != nullptr)
@@ -1879,17 +1814,14 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 			if (bSpecialAttack == true)
 			{
-				/*if (test == true)
-				{
-					RotateToTargetSetup();
-				}*/
-
 				//if current montage consumes cooldown properties
 				if (SelectedRow.IsUsingCD)
 				{
 					/**		set the counter moveset to skillmoveset*/
-					this->CounterMoveset = SelectedRow.SkillMoveset;
-
+					if (!this->CounterMoveset)
+					{
+						this->CounterMoveset = SelectedRow.SkillMoveset;
+					}
 
 					///GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
@@ -1902,7 +1834,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 			{
 				if (SelectedRow.UseTranslate)
 				{
-					FTimerHandle Delay;
+					//FTimerHandle Delay;
 
 					if (SelectedRow.IsUsingCD)
 					{
@@ -1933,31 +1865,23 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 				else if (SelectedRow.UseSection)
 				{
-					if (this->IsLocallyControlled())
-					{
-						/*FoundActors.Empty();
-						RotateToTargetSetup();*/
-						/*if (test == true)
-						{
-							RotateToTargetSetup();
-						}*/
-					}
-					
-					
-					if (AnimInsta->Montage_IsPlaying(SelectedRow.SkillMoveset))
-					{
-						if (ActiveSection != MontageSection)
-						{
-							AnimInsta->Montage_SetNextSection(ActiveSection, MontageSection, SelectedRow.SkillMoveset);
-						}
-					}
+					FTimerHandle delay;
+					FTimerDelegate timerDel;
 
-					else
+					this->OnComboDelay = true;
+
+					PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+
+					int32 sectionIndex = GetCurrentMontage()->GetSectionIndex(MontageSection);
+					float sectionLength = GetCurrentMontage()->GetSectionLength(sectionIndex);
+
+					timerDel.BindLambda([this]()
 					{
-						AttackSectionLength = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
-					}
-										
-					//PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+						this->OnComboDelay = false;
+
+					});
+
+					this->GetWorldTimerManager().SetTimer(delay, timerDel, sectionLength + comboInterval, false);
 				}
 
 				else
@@ -2272,14 +2196,14 @@ void ABattleMobaCharacter::FireTrace_Implementation(UBoxComponent* Col1, UBoxCom
 	}
 }
 
-bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack)
+bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ServerExecuteAction_Implementation(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack)
+void ABattleMobaCharacter::ServerExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
 {
-	MulticastExecuteAction(SelectedRow, ActiveSection, MontageSection, bSpecialAttack);
+	MulticastExecuteAction(SelectedRow, MontageSection, bSpecialAttack);
 }
 
 
@@ -2412,5 +2336,39 @@ void ABattleMobaCharacter::MoveRight(float Value)
 				}
 			}
 		}
+	}
+}
+
+void ABattleMobaCharacter::ChooseBattleStyle(int style)
+{
+	//		silat moveset
+	if (style == 1)
+	{		
+		this->ActionTable = SltActionTable;
+		this->switchBox = false;
+		this->switchShao = false;
+		this->MaxHealth = 750.0f;
+		this->Defence = 110.0f;
+
+	}
+
+	//		boxing moveset
+	else if (style == 2)
+	{
+		this->ActionTable = BoxActionTable;
+		this->switchBox = true;
+		this->switchShao = false;
+		this->MaxHealth = 450.0f;
+		this->Defence = 70.0f;
+	}
+
+	//		shaolin moveset
+	else if (style == 3)
+	{
+		this->ActionTable = ShaActionTable;
+		this->switchBox = false;
+		this->switchShao = true;
+		this->MaxHealth = 1100.0f;
+		this->Defence = 180.0f;
 	}
 }

@@ -7,7 +7,6 @@
 #include "InputLibrary.h"
 #include "GameFramework/Character.h"
 #include "BattleMobaAnimInstance.h"
-#include "Animation/BlendSpace1D.h"
 #include "BattleMobaCharacter.generated.h"
 
 class ABMobaTriggerCapsule;
@@ -19,7 +18,7 @@ class ABattleMobaCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-		//Replicated Network setup
+	//Replicated Network setup
 		void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/** Camera boom positioning the camera behind the character */
@@ -174,6 +173,12 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "ControlFlag")
 		TArray<AActor*> ActorsToGetGold;
 
+	UPROPERTY(BlueprintReadWrite, Category = "BattleStyle")
+		bool switchBox = false;
+
+	UPROPERTY(BlueprintReadWrite, Category = "BattleStyle")
+		bool switchShao = false;
+
 protected:
 
 	/** Called for forwards/backward input */
@@ -259,6 +264,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UDataTable* ActionTable;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Battle Style")
+		class UDataTable* SltActionTable;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Battle Style")
+		class UDataTable* BoxActionTable;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Battle Style")
+		class UDataTable* ShaActionTable;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* HitReactionMoveset;
 
@@ -331,9 +345,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		float Stamina;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
-		bool bAttacking = false;
-
 	//Damage to be dealt from the action
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Target")
 		bool TargetHead = false;
@@ -341,14 +352,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
 		FName AttackSection = "NormalAttack01";
 
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
-		FName CurrentSection = "NormalAttack01";
+	UPROPERTY(EditAnywhere, Category = "ActionSkill")
+		float comboInterval = 1.0f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "ActionSkill")
-		float AttackSectionLength = 0.0f;
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
+		int comboCount = 0;
 
-	UPROPERTY(EditDefaultsOnly, Category = "ActionSkill")
-		float RemainingLength = 0.0f;
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
+		bool OnComboDelay = false;
 
 	//*********************Knockout and Respawn***********************************//
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
@@ -394,6 +405,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 		TEnumAsByte<ETouchIndex::Type> RotTouchIndex;
 
+	
 
 protected:
 	// APawn interface
@@ -485,11 +497,11 @@ protected:
 
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
-		void ServerExecuteAction(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack);
+		void ServerExecuteAction(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack);
 
 	//Skill replicate on all client
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
-		void MulticastExecuteAction(FActionSkill SelectedRow, FName ActiveSection, FName MontageSection, bool bSpecialAttack);
+		void MulticastExecuteAction(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack);
 
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
@@ -561,4 +573,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
 		void GetButtonSkillAction(FKey Currkeys, FString ButtonName, bool& cooldown, float& CooldownVal);
 
+	UFUNCTION(BlueprintCallable, Category = "BattleStyle")
+		void ChooseBattleStyle(int style);
 };
