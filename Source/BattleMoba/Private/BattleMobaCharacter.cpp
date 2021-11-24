@@ -319,8 +319,26 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 
 	TraceDistance = 20.0f;
 
-	
+	static ConstructorHelpers::FObjectFinder<UDataTable> FindSltDT(TEXT("DataTable'/Game/Storage/DT_Slt.DT_Slt'"));
 
+	if (FindSltDT.Object)
+	{
+		this->SltActionTable = FindSltDT.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> FindBoxDT(TEXT("DataTable'/Game/Storage/DT_Box.DT_Box'"));
+
+	if (FindBoxDT.Object)
+	{
+		this->BoxActionTable = FindBoxDT.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> FindShaDT(TEXT("DataTable'/Game/Storage/DT_Shao.DT_Shao'"));
+
+	if (FindShaDT.Object)
+	{
+		this->ShaActionTable = FindShaDT.Object;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -2325,14 +2343,8 @@ void ABattleMobaCharacter::ChooseBattleStyle(int style)
 {
 	//		silat moveset
 	if (style == 1)
-	{
-		static ConstructorHelpers::FObjectFinder<UDataTable> FindSltDT(TEXT("DataTable'/Game/Storage/DT_Slt.DT_Slt'"));
-
-		if (FindSltDT.Object)
-		{
-			this->ActionTable = FindSltDT.Object;
-		}	
-		
+	{		
+		this->ActionTable = SltActionTable;
 		this->switchBox = false;
 		this->switchShao = false;
 		this->MaxHealth = 750.0f;
@@ -2343,13 +2355,7 @@ void ABattleMobaCharacter::ChooseBattleStyle(int style)
 	//		boxing moveset
 	else if (style == 2)
 	{
-		static ConstructorHelpers::FObjectFinder<UDataTable> FindBoxDT(TEXT("DataTable'/Game/Storage/DT_Box.DT_Box'"));
-
-		if (FindBoxDT.Object)
-		{
-			this->ActionTable = FindBoxDT.Object;
-		}
-
+		this->ActionTable = BoxActionTable;
 		this->switchBox = true;
 		this->switchShao = false;
 		this->MaxHealth = 450.0f;
@@ -2359,13 +2365,7 @@ void ABattleMobaCharacter::ChooseBattleStyle(int style)
 	//		shaolin moveset
 	else if (style == 3)
 	{
-		static ConstructorHelpers::FObjectFinder<UDataTable> FindShaDT(TEXT("DataTable'/Game/Storage/DT_Shao.DT_Shao'"));
-
-		if (FindShaDT.Object)
-		{
-			this->ActionTable = FindShaDT.Object;
-		}
-
+		this->ActionTable = ShaActionTable;
 		this->switchBox = false;
 		this->switchShao = true;
 		this->MaxHealth = 1100.0f;

@@ -264,6 +264,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UDataTable* ActionTable;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Battle Style")
+		class UDataTable* SltActionTable;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Battle Style")
+		class UDataTable* BoxActionTable;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Battle Style")
+		class UDataTable* ShaActionTable;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* HitReactionMoveset;
 
