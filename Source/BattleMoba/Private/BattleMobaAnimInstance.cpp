@@ -31,7 +31,7 @@ void UBattleMobaAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	if (!Owner)
+	/*if (!Owner)
 	{
 		return;
 	}
@@ -45,6 +45,6 @@ void UBattleMobaAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			isBox = pc->switchBox;
 			isShao = pc->switchShao;
 		}
-	}
+	}*/
 }
 

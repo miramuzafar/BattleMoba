@@ -140,6 +140,9 @@ class ABattleMobaCharacter : public ACharacter
 public:
 	ABattleMobaCharacter();
 
+	UPROPERTY(EditDefaultsOnly, Replicated, BlueprintReadWrite, Category = "Status")
+		float MaxHealth;
+
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 		float BaseTurnRate;
@@ -336,9 +339,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, BlueprintReadWrite, Category = "Status")
 		float Health;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status")
-		float MaxHealth;
-
 	UFUNCTION()
 		void OnRep_Health();
 
@@ -411,6 +411,8 @@ protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual void PossessedBy(class AController* NewController) override;
+
 	virtual void BeginPlay() override;
 	// End of APawn interface
 
@@ -435,6 +437,9 @@ protected:
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Transformation")
 	void ServerRotateToCameraView(FRotator InRot);
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "Movement")
+	void ServerSetMaxWalkSpeed(float Val);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "Transformation")
 	void RotateToCameraView(FRotator InRot);

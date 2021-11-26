@@ -70,6 +70,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, ArrDamagedEnemy);
 	DOREPLIFETIME(ABattleMobaCharacter, bApplyHitTrace);
 	DOREPLIFETIME(ABattleMobaCharacter, comboCount);
+	DOREPLIFETIME(ABattleMobaCharacter, MaxHealth);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -402,6 +403,12 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAction("TestCam", IE_Released, this, &ABattleMobaCharacter::OnCameraShake);
 }
 
+void ABattleMobaCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	GetMesh()->bOnlyAllowAutonomousTickPose = false;
+}
+
 void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -488,6 +495,7 @@ void ABattleMobaCharacter::RefreshPlayerData()
 	if (PS)
 	{
 		ActionTable = PS->ActionTable;
+		MaxHealth = PS->MaxHealth;
 
 		FString Context;
 		for (auto& name : ActionTable->GetRowNames())
@@ -2196,6 +2204,16 @@ void ABattleMobaCharacter::FireTrace_Implementation(UBoxComponent* Col1, UBoxCom
 	}
 }
 
+bool ABattleMobaCharacter::ServerSetMaxWalkSpeed_Validate(float Val)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerSetMaxWalkSpeed_Implementation(float Val)
+{
+	GetCharacterMovement()->MaxWalkSpeed = Val;
+}
+
 bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
 {
 	return true;
@@ -2306,6 +2324,8 @@ void ABattleMobaCharacter::MoveForward(float Value)
 					Rotate = false;
 					FoundActors.Empty();
 					currentTarget = NULL;
+					GetCharacterMovement()->MaxWalkSpeed = 700.0f;
+					//ServerSetMaxWalkSpeed(GetCharacterMovement()->MaxWalkSpeed);
 				}
 			}
 		}
@@ -2333,6 +2353,8 @@ void ABattleMobaCharacter::MoveRight(float Value)
 					Rotate = false;
 					FoundActors.Empty();
 					currentTarget = NULL;
+					GetCharacterMovement()->MaxWalkSpeed = 700.0f;
+					//ServerSetMaxWalkSpeed(GetCharacterMovement()->MaxWalkSpeed);
 				}
 			}
 		}

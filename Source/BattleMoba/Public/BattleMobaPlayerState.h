@@ -18,6 +18,10 @@ class BATTLEMOBA_API ABattleMobaPlayerState : public APlayerState
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 	
 public:
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+	float MaxHealth = 750.0f;
+
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 	FName TeamName;
 
