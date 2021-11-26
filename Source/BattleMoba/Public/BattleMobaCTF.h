@@ -58,8 +58,15 @@ public:
 	UFUNCTION()
 		void OnRep_Val();
 
+	//		controlling speed constant for each flag point
+	UPROPERTY(EditAnywhere, Category = "Status")
+		float ConstantSpeed = 1.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status")
 		float ControllingSpeed = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status")
+		float SpeedMultiplier = 0.05f;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		FName ControllerTeam = "";

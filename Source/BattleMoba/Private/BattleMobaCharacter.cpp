@@ -1687,24 +1687,25 @@ void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF* cf)
 	if (cf->RadiantControl > 0 && cf->DireControl == 0)
 	{
 		CTFteam = "Radiant";
-		ControlFlagMulticast(cf, CTFteam);
+		cf->ControllingSpeed = cf->ConstantSpeed - (cf->SpeedMultiplier * float(cf->RadiantControl));
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Capture Speed RADIANT: %f"), cf->ControllingSpeed));
 	}
 
 	else if (cf->DireControl > 0 && cf->RadiantControl == 0)
 	{
 		CTFteam = "Dire";
-		ControlFlagMulticast(cf, CTFteam);
+		cf->ControllingSpeed = cf->ConstantSpeed - (cf->SpeedMultiplier * float(cf->DireControl));
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Capture Speed DIRE: %f"), cf->ControllingSpeed));
 	}
 
 	else
 	{
 		CTFteam = "";
-		ControlFlagMulticast(cf, CTFteam);
 
 	}
 
-	cf->RadiantControl = 0;
-	cf->DireControl = 0;
+	ControlFlagMulticast(cf, CTFteam);
+	//GetWorld()->GetTimerManager().SetTimer(cf->FlagTimer, this, &ABattleMobaCTF::TimerFunction, cf->ControllingSpeed, true, 0.0f);
 	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current CTF Team is %s"), ((*CTFteam.ToString()))));
 }
 
@@ -1988,7 +1989,6 @@ void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activ
 			
 			if (bHit)
 			{
-				
 				HitResult(hitResult);
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *hitResult.Actor->GetName()));
 
