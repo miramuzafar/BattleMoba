@@ -81,6 +81,8 @@ void ABattleMobaCTF::BeginPlay()
 
 	//		Run GoldTimerFunction every 1 second after 20 seconds the game has started
 	this->GetWorldTimerManager().SetTimer(GoldTimer, this, &ABattleMobaCTF::GoldTimerFunction, 1.0f, true, 20.0f);
+
+	this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, false, 0.0f);
 }
 
 void ABattleMobaCTF::OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
@@ -92,8 +94,26 @@ void ABattleMobaCTF::OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
 		{
 			//	set CTFentering to true to add integer of a team in the sphere
 			pb->CTFentering = true;
+
+			//this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, false, 0.0f);
 			
-			this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, true, 0.0f);
+			
+
+			
+			/*if (pb->TeamName == "Radiant")
+			{
+				float csRadiant = ControllingSpeed - (SpeedMultiplier * float(RadiantControl));
+				this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, csRadiant, true, 0.0f);
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Capture Speed for Radiant: %f"), csRadiant));
+			}
+			
+			else if (pb->TeamName == "Dire")
+			{
+				float csDire = ControllingSpeed - (SpeedMultiplier * float(DireControl));
+				this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, csDire, true, 0.0f);
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Capture Speed for Dire: %f"), csDire));
+			}*/
+			
 		}
 	}
 }
@@ -157,6 +177,9 @@ void ABattleMobaCTF::TimerFunction()
 	this->GetOverlappingActors(this->OverlappedPlayer, ABattleMobaCharacter::StaticClass());
 	int arrLength = this->OverlappedPlayer.Num();
 
+	this->RadiantControl = 0;
+	this->DireControl = 0;
+
 	for (uint8 i = 0; i < arrLength; ++i)
 	{
 		ActivePlayer = Cast<ABattleMobaCharacter>(this->OverlappedPlayer[i]);
@@ -192,16 +215,19 @@ void ABattleMobaCTF::TimerFunction()
 			}
 		}
 	}
+
+	this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, false, ControllingSpeed);
+	
 }
 
 void ABattleMobaCTF::GoldTimerFunction()
 {
 	if (isCompleted)
 	{
-		if (this->GetWorldTimerManager().IsTimerActive(FlagTimer))
+		/*if (this->GetWorldTimerManager().IsTimerActive(FlagTimer))
 		{
 			this->GetWorldTimerManager().ClearTimer(FlagTimer);
-		}
+		}*/
 		int arrLength = this->GiveGoldActors.Num();
 
 		//		for every player of the controller team will gain chi orbs for every second when the Control Flag progress reaches 100
